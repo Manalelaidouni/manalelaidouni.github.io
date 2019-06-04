@@ -1,34 +1,34 @@
 # SITE CONFIGURATION
-baseurl: "/Type-on-Strap"
-url: "https://sylhare.github.io"
-title: Type on Strap # site's title
-description: "A website with blog posts and pages" # used by search engines
+baseurl: ""
+url: "https://Manalelai.github.io"
+title: Melai
+description: "Machine learning"
 
 
 # THEME-SPECIFIC CONFIGURATION
 theme_settings:
   # Meta
-  title: Type on Strap # blog's title
+  title: Melai
   avatar: assets/img/triangle.svg
   favicon: assets/favicon.ico
   gravatar: # Email MD5 hash
 
   # Header and footer text
-  header_text: Change header text in <code>_config.yml</code>
+  header_text: <code>A machine learning blog </code>
   header_feature_image: assets/img/pexels/triangular.webp
   footer_text: >
-    Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <a href="https://github.com/sylhare/Type-on-Strap">Type on Strap</a>
+    Powered by <a href="https://jekyllrb.com/">Jekyll</a>
 
   # Icons
   rss: true  # Make sure you created a feed.xml with feed.xml layout
-  email_address: # Full email address, e.g. "sam@example.com"
+  email_address: # Full email address, e.g. "mm.elaidouni@gmail.com"
   behance:
   bitbucket:
   dribbble:
   facebook:
   flickr:
   gitlab:
-  github: "sylhare"
+  github: ""
   google_plus:
   instagram:
   keybase:
@@ -39,11 +39,11 @@ theme_settings:
   stack_exchange:  # Full URL
   steam:
   tumblr:
-  twitter: # "twitter username"
+  twitter:  "https://twitter.com/MElaidouni"
   vimeo:
   wordpress:
   youtube:
-  
+
   # Sharing options
   share_buttons:
     facebook: true
@@ -57,19 +57,19 @@ theme_settings:
     wordpress:
     email: true
 
-  # Scripts / Features 
+  # Scripts / Features
   google_analytics: # Tracking ID, e.g. "UA-000000-01"
   disqus_shortname:
   katex: true # Enable if using math markup
-  
+
   special_page:
-    search: 
+    search:
       icon: "search"
       enabled: true
     tags:
       icon: "tags"
       enabled: true
-  
+
   # Localization strings
   str_follow_on: "Follow on"
   str_rss_follow: "Follow RSS feed"
@@ -86,10 +86,10 @@ theme_settings:
 
   # Post navigation
   post_navigation: true
-  
+
   # Colours, typography and padding
   # Open the "_sass > base" folder, and open "_variables.scss"
-  
+
 # PAGINATION
 paginate: 5
 paginate_path: "blog/page:num"
@@ -99,7 +99,7 @@ paginate_path: "blog/page:num"
 collections:
   portfolio:
     output: true
-    permalink: /:collection/:name
+    permalink: /:title.html
 
 
 # BUILD SETTINGS
@@ -109,5 +109,7 @@ sass:
   sass_dir: _sass
   style: :compressed
 plugins: [jekyll-paginate, jekyll-seo-tag]
+
 #theme: type-on-strap # Uncomment if using the theme as a jekyll theme gem
 exclude: ["Gemfile", "Gemfile.lock", "type-on-strap.gemspec", "*.gem", "LICENSE", "README.md", "screenshot.png", "package.json", "node_modules", "gulpfile.js", ".idea/*"]
+

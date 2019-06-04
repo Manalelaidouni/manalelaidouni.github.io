@@ -3,7 +3,6 @@ layout: post
 title: Circus
 img: "assets/img/portfolio/circus.webp"
 date: September 2014
-tags: [Ipsum]
 ---
 
 ![image]({{ page.img | relative_url }})

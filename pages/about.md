@@ -3,12 +3,10 @@ layout: page
 title: About
 permalink: /about/
 feature-img: "assets/img/pexels/circuit.webp"
-tags: [About, Archive]
+
 ---
+My name is Manal ELaidouni, a learner and machine learning enthusiast. In this blog you will find posts, projects and thoughts related to ML.
 
-Type on Strap is based on Type Theme, a free and open-source theme for [Jekyll](http://jekyllrb.com/), licensed under the MIT License.
+I started this blog to deepen my own understanding and gain more insights into how things work, to publicly document them and to share my passion with the community.
 
-Head over to the [theme's documentation](https://github.io/sylhare/Type-on-Strap) for much more information about Type on Strap or to install this theme on your own Jekyll site.
-
-This file is an example of a page in Jekyll, that automatically shows up in the header navigation, you can delete or modify this file freely.
- 
+If you have any feedback or questions, please don't hesitate to <a href="mailto:mm.elaidouni@gmail.com"> send an email</a> or reach out to me via <a href="https://twitter.com/MElaidouni">twitter</a>, I will be happy to hear from you.
