@@ -1,6 +1,6 @@
 # SITE CONFIGURATION
-baseurl: ""
-url: "https://Manalelai.github.io"
+baseurl: "Manalelai"
+url: ""
 title: Melai
 description: "Machine learning"
 
