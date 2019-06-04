@@ -737,7 +737,7 @@ output:
 > PyTorch only accepts mini-batches as input, hence it accepts 4 dimensional tensors of shape torch.size([ Batch_size, Num_channels, Hight, Width ]), therfore to pass a single image you should use the `unsqueeze()` method mentioned above, it allows you to add an extra dimension of 1 to the batch axis of the tensor shape `t.unsqueeze(dim=0)`.
 
 <br />
-You can find the complete code for this post in the following [jupyter notebook](https://github.com/melai/). 
+You can find the complete code for this post in the following [jupyter notebook](assets\notebook\Pytorch_post.ipynb).
 
 
 
