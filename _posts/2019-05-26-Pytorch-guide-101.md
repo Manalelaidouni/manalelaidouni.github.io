@@ -6,10 +6,10 @@ tags: [Pytorch, tutorial]
 permalink: Pytorch guide 101.html
 categories: 
   - Jekyll
-excerpt: Pytorch is one of the leading frameworks and one of the fastest growing platform in the deep learning research community,  in this guide we will learn about the building blocks of Pytorch along with a hands-on approach example.
+excerpt: Pytorch is one of the leading frameworks and one of the fastest growing platforms in the deep learning research community,  in this guide we will learn about the building blocks of Pytorch along with a hands-on approach example.
 ---
 
-Pytorch is an open source deep learning library created in Python, it enables tensor operations and automatic differentiation essential to neural network training. Pytorch is one of the leading frameworks and one of the fastest growing platform in the deep learning research community, this is largely due to its dynamic computation graph where you can build, change and execute your graph as you go, at run time, as opposed to a static graph where you define the graph statically before running it without being able to apply any changes to the graph.
+Pytorch is an open source deep learning library created in Python, it enables tensor operations and automatic differentiation essential to neural network training. Pytorch is one of the leading frameworks and one of the fastest growing platforms in the deep learning research community, this is largely due to its dynamic computation graph where you can build, change and execute your graph as you go at run time, as opposed to a static graph where you define the graph statically before running it, this restricts the model's flexibility during training.
 
 Thanks to Pytorch's dynamic graph you can :
 	 
@@ -45,7 +45,7 @@ import torch
 torch.tensor([1,2,3])
 ```
 
-output:
+Out:
 
     tensor([1, 2, 3])     
 
@@ -56,7 +56,7 @@ output:
 torch.randn(2,3)
 ```
 
-output:
+Out:
 
     tensor([[-1.0379,  0.4035,  1.1972],
             [ 0.1631, -0.4870,  0.6018]])
@@ -67,33 +67,33 @@ Conversion between torch tensors & numpy arrays is extremely straightforward bec
 ```python
 import numpy as np
 
-# Convert tensor t to numpy array
 t = torch.eye(3)
+# Convert tensor t to numpy array
 a = t.numpy()
 print('t = {}'.format(t))
 print('a = {}'.format(a))
 ```
-output:
+Out:
 
 
     t = tensor([[1., 0., 0.],
             [0., 1., 0.],
             [0., 0., 1.]])
                  
-     a = [[1. 0. 0.]
+    a = [[1. 0. 0.]
      [0. 1. 0.]
      [0. 0. 1.]] 
 
 ---
 
 ```python
-# Convert a numpy array a to a tensor
 a = np.array([1,2,3])
+# Convert the numpy array a to a tensor
 t = torch.from_numpy(a)
 print('a = {}'.format(a))
 print('t = {}'.format(t))
 ```
-output:
+Out:
 
     a = [1 2 3]
 
@@ -103,12 +103,13 @@ output:
 
 ##### 1.2 Tensor attributes 
 
+<br/>
 
 ```python
 torch.tensor(data=[1,2,3], dtype=torch.float32, device='cpu', requires_grad=False)
 ```
 
-output:
+Out:
 
     tensor([1., 2., 3.])
 
@@ -126,7 +127,7 @@ torch.tensor([1,2,3], dtype=torch.int32, device=device)
 ```
 
 
-output:
+Out:
        
      tensor([1, 2, 3], device='cuda:0', dtype=torch.int32)
 
@@ -136,7 +137,7 @@ output:
 
 #### 2. Autograd
 
-After doing a forward pass through the network, you can call `.backward()` to backpropagate the gradient to the inputs using the chain rule, by setting a Tensor's `requires_grad` to `True` you allow the gradient to backpropagate through its node in the computation graph therefore you could access its gradient by calling `.grad`. This automatic differentiation is enabled by the `autograd` package.
+After doing a forward pass through the network, you can call `.backward()` to backpropagate the gradient to the inputs using the chain rule, by setting a Tensor's `requires_grad` to `True` you allow the gradient to backpropagate through its node in the computation graph therefore you could access this Tensor's gradient by calling the `.grad` method. This automatic differentiation is enabled by the `autograd` package.
 <br/>
 
 ![Automatic differentiation](/assets/img/pexels/edit.gif){: style="width: 100%;" class="center"}
@@ -148,7 +149,7 @@ let's look at an example of this :
 A = torch.tensor((3), dtype=torch.float32, requires_grad=True)
 A
 ```
-output:
+Out:
     
     tensor(3., requires_grad=True)
 
@@ -158,7 +159,7 @@ output:
 B = torch.tensor((2), dtype=torch.float32, requires_grad=True)
 B
 ```
-output:
+Out:
 
      tensor(2., requires_grad=True)
 
@@ -172,7 +173,7 @@ C = A * B
 ```python
 C
 ```
-output:
+Out:
 
     tensor(6., grad_fn=<MulBackward0>)
 
@@ -185,7 +186,7 @@ D = torch.tensor((4), dtype=torch.float32, requires_grad=True)
 ```python
 D
 ```
-output:
+Out:
  
     tensor(4., requires_grad=True)
 
@@ -195,61 +196,66 @@ output:
 L = C + D
 L
 ```
-output:
+Out:
 
     tensor(10., grad_fn=<AddBackward0>)
 
 ---
 
+Compute the gradient of `L` w.r.t leaf Tensors (i.e Tensors that are not a result of an operation)
 
 ```python
 L.backward()
 ```
 
-
+The gradient of `L` w.r.t `A`
 ```python
 A.grad
 ```
-output:
+Out:
 
     tensor(2.)
 
 ---
-
+The gradient of `L` w.r.t `B`
 ```python
 B.grad
 ```
 
-output:
+Out:
 
     tensor(3.)
 
 ---
-
+The gradient of `L` w.r.t `D`
 ```python
 D.grad
 ```
-output:
+Out:
 
     tensor(1.)
 
 
-Note that you can only access the gradient of leaf Tensors (i.e Tensors that are not a result of an operation) through `.grad` for memory saving reasons, however you can extract the gradient of intermediate tensors for inspecting/debugging by calling `.retain_grad()` before calling `.backward()`.
+You can only access the gradient of leaf Tensors through `.grad` for memory saving reasons, however you can extract the gradient of intermediate tensors for inspecting/debugging by calling `.retain_grad()` before calling `.backward()`.
 
 
-Furthermore You can look at the `Function` that created the non-leaf Tensors by calling `.grad_fn`, of course leaf Tensors will return `None`.
+Furthermore You can look at the `Function` that created the non-leaf Tensors by calling `.grad_fn`, of course leaf Tensors will return `None` as the following.
 
 
 ```python
 A.grad_fn
 ```
+Out:
 
+    None
 
+---
+Meanwhile `L` is the result of adding two tensors `C` and `D`.
 ```python
 L.grad_fn
 ```
 
-output:
+Out:
 
     <AddBackward0 at 0x7f5dd1093320>   
 
@@ -306,7 +312,7 @@ transform = transforms.Compose([transforms.ToTensor(),
 
 
 
-`torchvision.datasets` class provides popular datasets specific to computer vision, so let's download the FashionMnist training set.
+`torchvision.datasets` class provides popular datasets specific to computer vision, so let's download the FashionMnist training dataset.
 
 
 ```python
@@ -315,7 +321,7 @@ train_dataset = datasets.FashionMNIST(root='./data',
                             download=True,
                             transform=transform)
 ```
-output:
+Out:
 
     0it [00:00, ?it/s]
 
@@ -430,7 +436,7 @@ image, labels = next(iter(train_loader))
 ```python
 imshow(torchvision.utils.make_grid(image,nrow=7))
 ```
-output:
+Out:
 
     Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers).
 
@@ -448,7 +454,7 @@ Let's look at the labels of the first 12 clothe items  :
 ```python
 print(list(classes[labels[j]] for j in range(12)))
 ```
-output:
+Out:
 
     ['Dress', 'Bag', 'Ankle boot', 'Ankle boot', 'Sneaker', 'Sandal', 'Bag', 'Coat', 'Sneaker', 'Sneaker', 'Pullover', 'Coat']
     
@@ -462,7 +468,7 @@ The class requires a specific methods to be implimented :  `__len__()`  to get t
 #### 2.  Building the network 
 
 
-Pytorch uses OOP to represent the dataset and model, the network class should inherit from  `nn.Module` because it tracks the network's parameters using `.parameters`, and allows us to easily  transfer the model between cpu or gpu using `.to(device)`.
+Pytorch uses OOP to represent the dataset and model, the network class should inherit from  `nn.Module` because it tracks the network's parameters using `.parameters` and allows us to easily  transfer the model between cpu and gpu using `.to(device)`.
 
 The class has an initialization part and a forward part, the former defines the layers with trainable parameters (e.g: convolution and FC layers) from `nn.Module`, while the latter defines the structure of those layers going from the input along with parameterless layers (e.g: max-pooling and activation functions..)  from `nn.Functional` module.
 
@@ -501,7 +507,7 @@ class Net(nn.Module):
 net = Net()
 print(net)
 ```
-output:
+Out:
 
     Net(
       (conv1): Conv2d(1, 12, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2))
@@ -511,12 +517,12 @@ output:
     )
     
 
-We pass the input tensor of size 1x28x28 to the first convolution layer then into a max pooling layer, again into a 2nd convolution layer followed by a 2ndmax pooling layer we get an output tensor of shape 7x7x20, this 3 dimensional tensor will then be flatten to a 1 dim tensor to be fed to the fully connected layers. The network will eventually output 10 probability distribution for the 10 classes. 
+We pass the input tensor of size 1x28x28 to the first convolution layer then into a max pooling layer, again into a 2nd convolution layer followed by a 2nd max pooling layer, this outputs a tensor of shape 7x7x20, then the 3 dimensional tensor is flatten to a 1 dim tensor to be fed to the fully connected layers. The network will eventually output 10 probability distribution for the 10 classes.
 
 You might be wandering how did we get an output of shape 7x7x20, let's follow the tensor dimension through the feedforward pass:
 
  
-- First start from the forward method to track the input tensor `x` going forward through the entire structure of layers.
+- First start from the forward method to track the input tensor `x` going forward through the entire structure of layers including layers with non-trainable parameter.
 	
 - Decompose the first line of code from inside out to inspect the dimension at each layer.
 	
@@ -536,7 +542,7 @@ $$
    
    Where $$w$$ and $$h$$ are the width and height of the input tensor, $$f$$ is the kernel size and $$p$$ is the number of padding used.
   
-- The number of output channels is set in out_channels attribute, it connotes the number of filters used, the output shape becomes : 12x28x28.
+- The number of output channels is set in out_channels attribute, it denotes the number of filters used, the output shape becomes : 12x28x28.
 	
 - `F.relu(self.conv1(x))` : applying an activation function to a tensor doesn't change its shape, it introduces non-linearity to learn complex functional mapping between the input and target.
 	
@@ -551,9 +557,9 @@ The `x.view()` method that we used to flatten the tensor specifies the shape to 
 
 #### 3. Defining the loss and optimizer
 
-Since it is a multi-classification problem we will use the cross entropy loss.
+Since it's a multi-classification problem we will use the cross entropy loss.
 
-For the optimizer we will use an Adam optimizer, you should provide it with the model's parameters stored `net.parameters()` along with the learning rate.
+For the optimizer we will use an Adam optimizer, you should provide the optimizer with the model's parameters stored in `net.parameters()` along with the learning rate.
 
 
 ```python
@@ -592,7 +598,7 @@ for epoch in range(epochs):
       if i % 1000 == 0:
               print ('epoch {}/{}, loss:{}'.format(epoch+1, epochs, loss.item()))
 ```
-output:
+Out:
 
     epoch 1/3, loss:2.3015217781066895
     epoch 1/3, loss:0.46092498302459717
@@ -605,7 +611,7 @@ output:
 
 #### 5. Saving and loading the model 
 
-The  `state_dict()` object is a dictionary  that both Pytorch models and optimizers have to store their parameters, the `model.state_dict()` maps each of the model layers to their parameters while `optimizer.state_dict()` saves the updated parameters and the hyperparameters it used, this provides you great flexibility to save your model's parameters, alter them and eventually restore them.
+The  `state_dict()` object is a dictionary  that both Pytorch models and optimizers have to store their parameters, the `model.state_dict()` maps each of the model layers to their parameters while `optimizer.state_dict()` saves the updated parameters and the hyperparameters it used, this provides a great flexibility to save your model's parameters, alter them and eventually restore them.
 
 ```python
 # Save the parameters
@@ -642,7 +648,7 @@ with torch.no_grad() :
         correct += (predicted == labels).sum()
 print('Test Accuracy on testing dataset is : {}%'.format(100 * correct / total))
 ```
-output:
+Out:
 
     Test Accuracy on testing dataset is : 96%
     
@@ -667,7 +673,7 @@ t = torch.rand(6,1)
 t.reshape(3,2).shape
 ```
 
-output:
+Out:
 
     torch.Size([3, 2])
 
@@ -681,7 +687,7 @@ t = torch.rand(1,3)
 t.squeeze().shape
 ```
 
-output:
+Out:
 
     torch.Size([3])
 
@@ -697,7 +703,7 @@ t = torch.rand(3,2)
 t.unsqueeze(dim=0).shape
 ```
 
-output:
+Out:
 
     torch.Size([1, 3, 2])
 
@@ -714,7 +720,7 @@ t = torch.rand(3,2)
 t.view(-1,6).shape
 ```
 
-output:
+Out:
 
     torch.Size([1, 6])
 
@@ -728,7 +734,7 @@ t = torch.rand(6,2,2)
 t.flatten().shape
 ```
 
-output:
+Out:
 
     torch.Size([24])
 
@@ -737,12 +743,12 @@ output:
 > PyTorch only accepts mini-batches as input, hence it accepts 4 dimensional tensors of shape torch.size([ Batch_size, Num_channels, Hight, Width ]), therfore to pass a single image you should use the `unsqueeze()` method mentioned above, it allows you to add an extra dimension of 1 to the batch axis of the tensor shape `t.unsqueeze(dim=0)`.
 
 <br />
-You can find the complete code for this post in the following [jupyter notebook](https://github.com/Manal-elai/Blog-jupyter-notebooks-/blob/master/Pytorch%20post.ipynb).
+You can find the complete code for this post in the following [jupyter notebook](https://github.com/Manal-elaidouni/Blog-jupyter-notebooks-/blob/master/Pytorch_post.ipynb).
 
 
 
 ## Conclusion
 
-This was an introductory post to Pytorch where we learned about torch packages, tensors and how does automatic differentiation in Pytorch work, we also built an effortless classifier that achieved a 96% accuracy on testing data, we learned as well how to track the input tensor dimension for deeper understanding of what happens inside the network which makes debugging easier.
+This was an introductory post to Pytorch where we learned about torch packages, tensors and how does automatic differentiation work, we also built an effortless classifier that achieved a 96% accuracy on testing data, we learned as well how to track the input tensor dimension for deeper understanding of what happens inside the network which makes debugging easier.
 
-If you want to learn more about Pytorch, I highly advise checking the [Pytorch official ](https://pytorch.org/tutorials/) tutorials for multiple CV, NLP, generative and RL applications. Remember we learn by doing so to try to run the notebooks and reproduce them in Google Colab.
+If you want to learn more about Pytorch, I highly advise checking the [Pytorch official ](https://pytorch.org/tutorials/) tutorials for multiple CV, NLP, generative and RL applications. Remember we learn by doing so try to run the notebooks and reproduce them in Google Colab.
