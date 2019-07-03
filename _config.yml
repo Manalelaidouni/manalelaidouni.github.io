@@ -1,14 +1,14 @@
 # SITE CONFIGURATION
 baseurl: ""
 url: "manalelaidouni.github.io"
-title: Melai
+title: Manal Elaidouni
 description: "Machine learning"
 
 
 # THEME-SPECIFIC CONFIGURATION
 theme_settings:
   # Meta
-  title: Melai
+  title: Manal Elaidouni
   avatar: assets/img/triangle.svg
   favicon: assets/favicon.ico
   gravatar: # Email MD5 hash
