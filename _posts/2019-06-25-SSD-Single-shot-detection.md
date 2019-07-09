@@ -93,7 +93,7 @@ SSD mines the unmatched default boxes to be negatives examples , which are backg
 
 Nonetheless, instead of using all negative examples, we can select just the best ones and forward them for training :
 
-Sort the examples by their individual background confidence loss (i.e. individual cross entropy loss) in ascending order, then forward only the top ones for training, i.e. the negative examples of high confidence score, the ratio for each training batch is 3 negatives for 1 positive example.
+Sort the examples by their individual background confidence loss (i.e. individual cross entropy loss) in ascending order, then only forward the top ones for training, i.e. the negative examples of high confidence score, the ratio for each training batch is 3 negatives for 1 positive example.
 
 ####  Data augmentation
 
@@ -132,9 +132,9 @@ The localization loss could be greater than the loc loss, therefore the network 
 
 ### Inference time
 
-Taking into account the large number of boxes SSD produces, it discards boxes with confidence score lower than 0.01, these are empty boxes, it then proceeds to perform non-max suppression (nms). When multiple boxes detect the same object, nms keeps only the best box per object.
+Taking into account the large number of boxes SSD produces, it discards boxes with confidence score lower than 0.01, these are empty boxes, it then proceeds to perform non-max suppression (nms). When multiple boxes detect the same object, nms only keeps the best box per object.
 
-Here is how it operates, for each class, nms selects the box with the highest confidence score and discards the remaining that overlap the most with this box, this is to keep only the best box per object, it uses a threshold of  IOU>=0.45.
+Here is how it operates, for each class, nms selects the box with the highest confidence score and discards the remaining that overlap the most with this box, this is to only keep the best box per object, it uses a threshold of  IOU>=0.45.
 
 The first filtering process combined with nms results in minimizing the number of boxes per image to 200.
 
@@ -151,7 +151,7 @@ The first filtering process combined with nms results in minimizing the number o
 *Effect of using different feature layers on SSD performance ([source](https://arxiv.org/pdf/1512.02325.pdf))*
 
 
-> Analyzing the above table we see that using only conv7 layer decreased accuracy by a great margin of 11.9% mAP, emphasizing on the importance of using multiple feature maps of different resolutions.
+> Analyzing the above table we see that only using conv7 layer decreased accuracy by a great margin of 11.9% mAP, emphasizing on the importance of using multiple feature maps of different resolutions.
  
 * Interestingly enough, not using conv11_2 , the smallest resolution layer, increased performance by a small margin, this is perhaps due to small resolution feature maps being inadequate of small object detection.
 

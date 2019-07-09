@@ -15,7 +15,7 @@ theme_settings:
 
   # Header and footer text
   header_text: <code>A machine learning blog </code>
-  header_feature_image: assets/img/pexels/triangular.webp
+  header_feature_image: assets/img/pexels/triangular.webps
   footer_text: >
     Powered by <a href="https://jekyllrb.com/">Jekyll</a>
 
@@ -58,8 +58,8 @@ theme_settings:
     email: true
 
   # Scripts / Features
-  google_analytics: # Tracking ID, e.g. "UA-000000-01"
-  disqus_shortname:
+  google_analytics: UA-143524597-1
+  disqus_shortname: manalelaidouni
   katex: true # Enable if using math markup
 
   special_page:
