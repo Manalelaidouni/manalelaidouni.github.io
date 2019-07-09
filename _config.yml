@@ -15,7 +15,7 @@ theme_settings:
 
   # Header and footer text
   header_text: <code>A machine learning blog </code>
-  header_feature_image: assets/img/pexels/triangular.webps
+  header_feature_image: assets/img/pexels/astronomy.jpg
   footer_text: >
     Powered by <a href="https://jekyllrb.com/">Jekyll</a>
 
