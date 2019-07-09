@@ -2,10 +2,10 @@
 layout: page
 title: About
 permalink: /about/
-feature-img: "assets/img/pexels/circuit.webp"
+feature-img: "assets/img/pexels/nasa.webp"
 
 ---
-My name is Manal ELaidouni, a learner and machine learning enthusiast. In this blog you will find posts, projects and thoughts related to ML.
+My name is Manal EL Aidouni, a learner and machine learning enthusiast. In this blog you will find posts, projects and thoughts related to ML.
 
 I started this blog to deepen my own understanding and gain more insights into how things work, to publicly document them and to share my passion with the community.
 

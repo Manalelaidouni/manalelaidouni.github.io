@@ -1,27 +1,27 @@
 # SITE CONFIGURATION
 baseurl: ""
 url: "manalelaidouni.github.io"
-title: Manal Elaidouni
+title: Manal El Aidouni
 description: "Machine learning"
 
 
 # THEME-SPECIFIC CONFIGURATION
 theme_settings:
   # Meta
-  title: Manal Elaidouni
+  title: Manal El Aidouni
   avatar: assets/img/triangle.svg
   favicon: assets/favicon.ico
   gravatar: # Email MD5 hash
 
   # Header and footer text
   header_text: <code>A machine learning blog </code>
-  header_feature_image: assets/img/pexels/astronomy.jpg
+  header_feature_image: assets/img/pexels/astronomy.webp
   footer_text: >
     Powered by <a href="https://jekyllrb.com/">Jekyll</a>
 
   # Icons
   rss: true  # Make sure you created a feed.xml with feed.xml layout
-  email_address: # Full email address, e.g. "mm.elaidouni@gmail.com"
+  email_address: # Full email address, e.g."
   behance:
   bitbucket:
   dribbble:
