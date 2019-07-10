@@ -10,7 +10,7 @@ excerpt: A thorough explanation of the inner workings of SSD, and its key contri
 ---
 ### Evolution of object detection algorithms leading to SSD
 
-Classic object detectors were based on sliding window approach (DPM), this was computationally intensive due to the exhaustive search, but they were quickly rendered obsolete by the rise of region proposals with (R-CNN, Fast R-CNN), this approach introduces a selective search algorithm for finding potential objects, it performed relatively better, but it had its limitations, since the search algorithm is a decoupled process from training it would generate false positives and forward them to training, this combined with the complex pipeline made it computationally expensive as well as slow with 0.4 frames per second (fps) for Fast R-CNN.
+Classical object detectors were based on sliding window approach (DPM), this was computationally intensive due to the exhaustive search, but they were quickly rendered obsolete by the rise of region proposals with (R-CNN, Fast R-CNN), this approach introduces a selective search algorithm for finding potential objects, it performed relatively better, but it had its limitations, since the search algorithm is a decoupled process from training it would generate false positives and forward them to training, this combined with the complex pipeline made it computationally expensive as well as slow with 0.4 frames per second (fps) for Fast R-CNN.
 
 Faster-RCNN solves the disjoint pipeline problem by replacing the external region proposal algorithm with an embedded Region Proposal Network (RPN) making it a unified network, this achieved 73.2 mAP on Pascal VOC2007 test set, but it remains significantly slow for real-time detection applications with 7 fps.
 
