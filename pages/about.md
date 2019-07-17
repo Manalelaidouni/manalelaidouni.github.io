@@ -9,4 +9,4 @@ My name is Manal EL Aidouni, a learner and machine learning enthusiast. In this 
 
 I started this blog to deepen my own understanding and gain more insights into how things work, to publicly document them and to share my passion with the community.
 
-If you have any feedback or questions, please don't hesitate to <a href="mailto:mm.elaidouni@gmail.com"> send an email</a> or reach out to me via <a href="https://twitter.com/MElaidouni">twitter</a>, I will be happy to hear from you.
+If you have any feedback or questions, please don't hesitate to <a href="mailto:mm.elaidouni@gmail.com"> send an email</a> or reach out to me via <a href="https://twitter.com/Manal_ELAI">twitter</a>, I will be happy to hear from you.
