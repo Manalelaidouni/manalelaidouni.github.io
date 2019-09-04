@@ -6,7 +6,7 @@ tags: [object detection, SSD]
 permalink: Single shot object detection.html
 categories: 
   - Jekyll
-excerpt: A thorough explanation of the inner workings of SS and its key contributions to faster than state of the art detectors (YOLO) while being as accurate as Faster R-CNN.
+excerpt: A thorough explanation of the inner workings of SSD and its key contributions to faster than state of the art detectors (YOLO) while being as accurate as Faster R-CNN.
 ---
 ### Evolution of object detection algorithms leading to SSD
 
