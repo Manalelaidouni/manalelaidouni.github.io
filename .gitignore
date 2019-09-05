@@ -1,9 +1,6 @@
 # Idea files
 .idea/*
 
-# Draft folder
-_.drafts/
-
 # Mac files
 .DS_Store
 
