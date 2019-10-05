@@ -1,7 +1,7 @@
 ---
 layout: post
 title: 'Evaluating Object Detection Models: Guide to Performance Metrics'
-date : 2019-06-25
+date : 2019-10-05
 tags: [object detection, evaluation, mAP, averages precision, recall, precision]
 permalink: Evaluating-Object-Detection-Models-Guide-to-Performance-Metrics.html
 categories: 
