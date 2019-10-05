@@ -20,9 +20,8 @@ Now you may have stumbled upon unfamiliar metric terms like AP, recall,  precisi
 ### Key notions
 
 
-Since the classification task only evaluates the probability of the class object appearing in the image, it's considered straightforward task for a classifier to identify correct predictions from incorrect ones.
 
-It is considered a simple task for a classifier to identify correct predictions from incorrect ones, as the classification task only evaluates the probability of the class object appearing in the image. The object detection task, however, localizes the object further with a bounding box with its corresponding confidence score to report how certain the bounding box of the object class detected.
+It is considered a simple task for a classifier to identify correct predictions from incorrect ones, as the classification task only evaluates the probability of the class object appearing in the image. The object detection task, however, further localizes the object with a bounding box associated with its corresponding confidence score to report how certain the bounding box of the object class detected.
 
 Therefore to determine how many objects were detected correctly and how many false positives were generated (will be discussed below), we use the Intersection over Union (IoU) metric.
 
