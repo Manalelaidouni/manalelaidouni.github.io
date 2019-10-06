@@ -10,7 +10,7 @@ excerpt:  I explain the main object detection metrics and the interpretation beh
 ---
 Object detection metrics serve as a measure to assess how well the model performs on an object detection task. It also enables us to compare multiple detection systems objectively or compare them to a benchmark. Accordingly, prominent competitions such as PASCAL VOC and MSCOCO provide predefined metrics to evaluate how different algorithms for object detection perform on their datasets.
 
-Now you may have stumbled upon unfamiliar metric terms like AP, recall,  precision-recall curve or simply stated in research paper that the model has high sensitivity. The use of multiple metrics can be often confusing.  Therefore, in this post we explain the main object detection metrics and the interpretation behind their abstract notions and percentages. As well as how to knowing if your model has a decent performance and if not what to do to improve it.   
+Now you may have stumbled upon unfamiliar metric terms like AP, recall,  precision-recall curve or simply stated in a research paper that the model has high sensitivity. The use of multiple metrics can be often confusing.  Therefore, in this post we explain the main object detection metrics and the interpretation behind their abstract notions and percentages. As well as how to know if your model has a decent performance and if not what to do to improve it.   
 
 * TOC
 {:toc}
@@ -20,8 +20,7 @@ Now you may have stumbled upon unfamiliar metric terms like AP, recall,  precisi
 ### Key notions
 
 
-
-It is considered a simple task for a classifier to identify correct predictions from incorrect ones, as the classification task only evaluates the probability of the class object appearing in the image. The object detection task, however, further localizes the object with a bounding box associated with its corresponding confidence score to report how certain the bounding box of the object class detected.
+Since the classification task only evaluates the probability of the class object appearing in the image, it is a straightforward task for a classifier to identify correct predictions from incorrect ones. However, the object detection task localizes the object further with a bounding box  associated with its corresponding confidence score to report how certain the bounding box of the object class detected.
 
 Therefore to determine how many objects were detected correctly and how many false positives were generated (will be discussed below), we use the Intersection over Union (IoU) metric.
 
@@ -29,7 +28,7 @@ Therefore to determine how many objects were detected correctly and how many fal
 
 
 
-Intersection over Union, also referred to as the Jaccard Index, is an evaluation metric that quantifies the similarity between the ground truth bounding box (i.e. Targets annotated with bounding boxes in the test dataset) and the predicted bounding box to evaluate how good the predicted box is. The IoU score ranges from 0 to 1, the greater the IoU score, the closer the two boxes.
+Intersection over Union, also referred to as the Jaccard Index, is an evaluation metric that quantifies the similarity between the ground truth bounding box (i.e. Targets annotated with bounding boxes in the test dataset) and the predicted bounding box to evaluate how good the predicted box is. The IoU score ranges from 0 to 1, the closer the two boxes, the higher the IoU score.
 
 Formally, the IoU measures the overlap between the ground truth box and the predicted box over their union.
 
@@ -45,9 +44,11 @@ By computing the IoU score for each detection, we set a threshold for converting
 
 Below is the case of a true positive prediction on the left, the two cases in the center of a false positive prediction, and the false negative prediction on the left.
 
+<br /> 
+
 ![Predictions](/assets/img/pexels/Detections_IoU_edit1-401ab064-29c4-4e74-8b34-b79b7b5cb6eb.png)
 
-
+<br /> 
 
 >You may note that I did not mention True Negative predictions (TN), on the grounds that it describes the situation where *empty* boxes are correctly detected as "*non-object*". In this scenario, the model would evidently identify thousands of empty boxes which adds little to no value to our algorithm. Furthermore, in calculating object detection metrics, which we will address soon, false negatives are not essential.
 
@@ -64,9 +65,14 @@ $$
 Accuracy = \frac{TP + TN}{TP + FP + TN +FN}
 $$
 
+
+
 The accuracy result can be very misleading when dealing with class imbalanced data, where the number of instances is not the same for each classes, as It puts more weight on learning the majority classes than the minority classes. 
 
 In detection datasets, class distribution is considerably non-uniform. For instance, in the renowned Pascal VOC 2007 dataset, the “person” class is by far the most frequent one with 9,218 object instances, whereas the 'dining table' class is of 421 instances. 
+
+<br /> 
+
 
 #### Precision
 
@@ -102,7 +108,7 @@ $$
 
 <br /> 
 
-Similarly, recall ranges from 0 to 1, a high recall score means that the most ground truth objects were detected. E.g, recall =0.6, implies that the model detects 60% of the objects correctly.
+Similarly, recall ranges from 0 to 1 where a high recall score means that most ground truth objects were detected. E.g, recall =0.6, implies that the model detects 60% of the objects correctly.
 
 <br /> 
 
@@ -113,15 +119,17 @@ Similarly, recall ranges from 0 to 1, a high recall score means that the most gr
 - Low recall but High precision implies that all predicted boxes are correct, but most ground truth objects have been missed (many false negatives).
 - High precision and high recall, the ideal detector has most ground truth objects detected correctly.
 
-Note that we can evaluate the performance of the model as a whole, as well as evaluating its performance on each category label, computing class-specific evaluation metrics.
+> Note that we can evaluate the performance of the model as a whole, as well as evaluating its performance on each category label, computing class-specific evaluation metrics.
 
-To illustrate how recall and precision are calculated, let's look at an example of a 5-category detection system.
+To illustrate how recall and precision are calculated, let's look at an example of a object detection model. Below are images of objects where those on the left depict the ground truth bounding boxes, and those on the right represent the predicted boxes. We set the IoU threshold at 0.5. 
 
-These are images of objects, where images on the left depict the ground truth bounding boxes, and those on the right represent the predicted boxes. We set  threshold of 0.5 for IoU. 
+Bear in mind that the predictions are individually calculated for each class.
 
-Note that predictions are individually calculated for each class.
+<br /> 
 
-![Detection output](/assets/img/pexels/Final_detection_Test_(4)-ec90cda7-f58f-4259-9887-b4fde66c6c33.png)
+![Detection output](/assets/img/pexels/Final_detection_Test_(4)-ec90cda7-f58f-4259-9887-b4fde66c6c33.png){:height="500px" width="1200px"}
+
+<br /> 
 
 *How predictions work:*
 
@@ -130,21 +138,24 @@ Note that predictions are individually calculated for each class.
 - If the object is not in the image, yet the model detects one then the prediction is considered FP.
 - Recall and precision are then computed for each class by applying the above-mentioned formulas, where predictions of TP, FP and FN  are accumulated.
 
+<br /> 
+
 Let's calculate recall and precision for the 'Person' category:
 
 Recall $$= \frac{TP}{TP + FN} $$ $$ = \frac{1}{1+1}$$  $$=$$ 50% 
 
 Precision $$ = \frac{TP}{TP + FP} $$ $$ = \frac{1}{1+2} $$ $$ = $$ 33% 
 
-Now if you're not satisfied with the results, what can you do to improve the performance? This is where the *confidence threshold* comes into the picture.
+
+Now if you're not satisfied with those results, what can you do to improve the performance? This is where the *confidence threshold* comes into the picture.
 
 <br /> 
 
 
-### Precision - recall and confidence threshold
+### Precision - recall and the confidence threshold
 
 
-When optimizing your model for both recall and precision, it is unlikely that an object detector will yield both peak recall and precision on an object class at all times, mainly because of a trade-off between the two metric. This trade-off depends on the confidence threshold. Let's see how this works:
+When optimizing your model for both recall and precision, it is unlikely that an object detector will yield both peak recall and precision on an object class at all times, mainly because of a trade-off between the two metrics. This trade-off depends on the confidence threshold. Let's see how this works:
 
 The object detector predicts bounding boxes, each associated with a confidence score. The confidence score is used to assess the probability of the object class appearing in the bounding box. Accordingly, we set a threshold to turn these confidence probabilities into classifications, where detections with a confidence score above the predetermined threshold are considered true positives (TP), while the ones below the threshold are considered false positives (FP).
 
@@ -162,7 +173,7 @@ Accordingly, for the above example in the images, in order to reduce false posit
 
 Another metric that summarizes both recall and precision and provides a model-wide evaluation is the precision x recall curve.  Since both metrics do not use true negatives, the precision x recall curve is a suitable measure to assess the model's performance on imbalanced datasets. 
 
-Furthermore, Pascal VOC 2012 challenge utilizes the precision x recall curve as a metric in conjunction with average precision that will be addressed <a href="#AP"> later </a> in this post.
+Furthermore, Pascal VOC 2012 challenge utilizes the precision x recall curve as a metric in conjunction with average precision which will be addressed <a href="#AP"> later </a> in this post.
 
 As the name implies, the precision x recall curve plots recall on the x-axis and precision on the y-axis, where each point in the curve represents recall and precision values for a certain confidence value.
 
@@ -175,7 +186,7 @@ As the name implies, the precision x recall curve plots recall on the x-axis and
 
 When recall increases, an ideal model would have high precision, otherwise the model performs poorly. In this situation, consider increasing recall to correctly detect all ground truth objects by reducing the confidence threshold.
 
-On the other hand, when comparing multiple models, the one with highest curve in the precision x recall plot is considered the better performer.
+On the other hand when comparing multiple models, the one with highest curve in the precision x recall plot is considered the better performer.
 
 >Nevertheless, due to the trade-off between recall and precision, the curve can be noisy and have a particular saw-tooth shape that makes it difficult to estimate the performance of the model and similarly difficult to compare different models with their precision x recall curves crossing each other. Therefore we estimate the area under the curve using a numerical value called Average Precision.
 
@@ -207,14 +218,22 @@ $$
 
 Now for the above example, let's calculate 11-point interpolated AP:
 
+<br /> 
+
+
 ![](/assets/img/pexels/all_point_interpolated_AP_Areas__(2)-7d3272db-e4e0-4f69-8aff-128f07ed6068.png)
 
 {:.image-caption}
 *Precision is interpolated with the maximum precision point to the right at recall level 0.3. This is indicated by the orange line in the graph.*
 
+<br /> 
+
 Similarly, this approach is applied to all of 11 recall values (0,0.1,0.2,...,1). In our particular situation, recall levels start with 0.2, nevertheless the strategy remains the same.
 
 ![](/assets/img/pexels/11_AP_interp-04172b61-95df-4c23-b1e6-31761d203e51.gif)
+
+<br /> 
+
 
 Now to compute AP, we average all of the interpolated precision points.
 
@@ -234,19 +253,29 @@ AP = 35$$ %
 
 #### All point average precision
 
-Prior to 2010, the Pascal VOC competition used 11-point interpolation, but ultimately changed the approach to AP computing by using *all* recall levels instead of only using 11 recall points to effectively compare detection algorithms with low AP scores.
+Prior to 2010, the Pascal VOC competition used 11-point interpolation, but ultimately changed the approach to computing AP by using *all* recall levels instead of only using 11 recall points to effectively compare detection algorithms with low AP scores.
+
+<br /> 
 
 ![](/assets/img/pexels/all_point_interpolated_AP_(2)-848db820-1379-456f-bad8-8e45ea562fd0.png)
+
+<br /> 
 
 >Since all recall points are now included, the area under the curve (AUC) can be closely estimated as AP, hence we can calculate AP by directly computing the area under the curve (AUC).
 >AUC is the sum of all the separate areas under the curve, where a separate area is defined by a drop of precision at a certain recall *r*.
 
 Consequently, for our example, we are dividing the area under the curve to 10 areas.
 
+<br /> 
+
 ![](/assets/img/pexels/all_point_interpolated_AP_Areas_-485a631f-150f-41db-a1d3-ea9f28b13a2a.png)
+
+<br /> 
 
 This translates mathematically into the following:
 
+<br />
+ 
 $$
 AP = \sum_{}^{}(r_{n}-r_{n-1}) p_{interp}(r_{n})
 $$
@@ -257,7 +286,10 @@ $$
 p_{interp}(r_{n}) =\max_{\widetilde{r} > r_{n}} p(\widetilde{r})
 $$
 
-Now AP is the total sum of the 10 rectangle areas under the curve, where 
+<br /> 
+
+
+Now AP is the total sum of the 10 rectangle areas under the curve, where:
 
 
 $$AP = $$ Rect.1 + Rect.2 + Rect.3 +Rect.4 + Rect.5 + Rect.6 + Rect.7 + Rect.8 + Rect.9 + Rect.10
@@ -279,17 +311,22 @@ $$ AP = $$ 36%
 
 
 
-Now that we understand AP, mean average precision (I know sounds pretty absurd when it's laid out)  is a refreshingly simple matter. In essence, if the dataset contains *N* class categories, the mAP averages AP over the *N* classes.
+Now that we understand AP, mean average precision (I know when it's laid out it sounds quite absurd) is a refreshingly simple matter. In essence, if the dataset contains *N* class categories, the mAP averages AP over the *N* classes.
+
+<br /> 
 
 $$mAP = \frac{1}{N}\sum_{i=1}^{N} AP_{i}$$
+
+<br /> 
 
 In addition, PASCAL VOC challenge uses mAP as a metric with an IoU threshold of 0.5, while MS COCO averages mAP over different IoU thresholds (0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95) with a step of 0.05, this metric is denoted in papers by *mAP@[.5,.95]*. Therefore, COCO not only averages AP over all classes but also on the defined IoU thresholds. 
 
 Note that mAP and AP are often used interchangeably, this is the case with COCO competition. According to their official website:
 
-''
+'
 AP and AR are averaged over multiple Intersection over Union (IoU) values. Specifically we use 10 IoU thresholds of .50:.05:.95. This is a break from tradition, where AP is computed at a single IoU of .50 (which corresponds to our metric $$AP^{IoU}=.50$$. Averaging over IoUs rewards detectors with better localization.
-''
+'
+
 >By optimizing AP or AR (discussed next) over multiple IoU threshold values, the model penalizes poor localization and optimizes for good localization. Simply because the localization accuracy is evaluated on the basis of  the IoU between the ground truth and the predicted box, this is the optimal strategy to be used for detection applications that require high localization, such as self driving cars or medical imaging.
 
 <br /> 
@@ -308,9 +345,11 @@ Average recall describes the area doubled under the Recall x IoU curve. The Reca
 
 Consequently, this translates mathematically into : 
 
-$$AR = 2 \int_{0.5}^{1} recall(IoU)  \text{d}IoU$$
 
-mAR is the average of AR over the number of classes within the dataset, similar to mAP.
+$$AR = 2 \int_{0.5}^{1} recall(IoU)  \text{d}IoU$$
+<br /> 
+
+Similarly to mAP, mAR is the average of AR over the number of classes within the dataset.
 
 <br /> 
 
@@ -319,13 +358,14 @@ mAR is the average of AR over the number of classes within the dataset, similar 
 
 **The COCO Object Detection Challenge** : evaluates detection using 12 metrics where:
 
-- mAP (interchangeably referred to in the competition by AP) is the principal metric for evaluation in the competition, where AP is averaged over all 10 thresholds and all 80 COCO dataset categories. This denoted by *AP@[.5 : .95]* or *AP@[.50: .05: .95]* incrementing with .05. Hence, a higher AP score according to the COCO evaluation protocol is indicative of detected objects being perfectly localized by the bounding boxes.
+- mAP (interchangeably referred to in the competition by AP) is the principal metric for evaluation in the competition, where AP is averaged over all 10 thresholds and all 80 COCO dataset categories. This denoted by *AP@[.5 : .95]* or *AP@[.50: .05: .95]* incrementing with .05. Hence, a higher AP score according to the COCO evaluation protocol indicates that detected objects are perfectly localized by the bounding boxes.
 <br /> 
+
 
 - Additionally, COCO individually evaluates on AP at 0.5 and 0.75 IoU thresholds, this is denoted by *AP@.50* or *AP$$^{IOU=0.50}$$* and *AP@.75* or *AP$$^{IOU=0.75}$$* respectively.
 <br /> 
 
-- Since COCO dataset contains small object more than large ones, the performance is evaluated on AP in  distinct object dimensions where:
+- Since COCO dataset contains small objects more than large ones, the performance is evaluated on AP in  distinct object dimensions where:
     - AP $$^{small} $$ for small objects of area less than 32 $$^2 $$.
     - AP $$^{medium} $$ for medium object of area  32 $$^2 $$ < area <  96 $$^2 $$.
     - Finally, AP $$^{large} $$ for large objects with area greater than 96 $$^2 $$.
@@ -333,7 +373,7 @@ mAR is the average of AR over the number of classes within the dataset, similar 
   The object area is defined by the number of pixels in the object mask provided for the object segmentation task in COCO competition. 
 <br /> 
 
-- Similarly COCO evaluates the algorithms on mAR (mAR referred to here by AR) across scales with AR $$^{small}$$, AR $$^{medium}$$ and AR $$^{large} $$.
+- Similarly, COCO evaluates the algorithms on mAR (mAR is referred to by AR) across scales with AR $$^{small}$$, AR $$^{medium}$$ and AR $$^{large} $$.
 <br /> 
  
 - Furthermore, COCO uses an additional metric which bases the AR evaluation on the number of detections per image number, specifically  AR $$^{max=1}$$ given 1 detection per image, AR $$^{max=10}$$ for 10 detections per image and  AR $$^{max=100}$$ for 100 detections per image.
