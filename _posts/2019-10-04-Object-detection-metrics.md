@@ -3,7 +3,7 @@ layout: post
 title: 'Evaluating Object Detection Models: Guide to Performance Metrics'
 date : 2019-10-05
 tags: [object detection, evaluation, mAP, averages precision, recall, precision]
-permalink: Evaluating-Object-Detection-Models-Guide-to-Performance-Metrics.html
+permalink: Evaluating-Object-Detection-Models-Guide-to-PerformancecMetrics.html
 categories: 
   - Jekyll
 excerpt:  I explain the main object detection metrics and the interpretation behind their abstract notions and percentages. As well as how to knowing if your model has a decent performance and if not what to do to improve it.
