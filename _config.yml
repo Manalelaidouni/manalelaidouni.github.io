@@ -102,10 +102,11 @@ collections:
     permalink: /:title.html
 
 
-math_engine: katex
 
 # BUILD SETTINGS
 markdown: kramdown
+kramdown:
+   math_engine:   katex
 highlighter: rouge
 sass:
   sass_dir: _sass
