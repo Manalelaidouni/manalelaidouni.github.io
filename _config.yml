@@ -106,7 +106,7 @@ collections:
 # BUILD SETTINGS
 markdown: kramdown
 kramdown:
-   math_engine:   katex
+  math_engine: mathjax
 highlighter: rouge
 sass:
   sass_dir: _sass
