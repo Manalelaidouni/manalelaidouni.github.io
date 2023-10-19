@@ -101,8 +101,8 @@ collections:
     output: true
     permalink: /:title.html
 
-kramdown:
-  math_engine: null
+
+math_engine: katex
 
 # BUILD SETTINGS
 markdown: kramdown
