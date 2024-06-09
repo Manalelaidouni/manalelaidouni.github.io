@@ -26,13 +26,13 @@ By the end of this post, you should have a deep understanding of:
 
 <br>
 
-# **Quantization Overview**
+### Quantization Overview
 
 The concept of quantization originates from the field of signal processing, where an information signal is mapped from a continuous input domain to a discrete one. In deep learning, we use quantization to reduce the precision of neural network weights and activations because models are typically over-parameterized, meaning they include a lot of redundancy. This is typically achieved by mapping their values from floating point to a discrete set of integer numbers, e.g, converting them from Float32 into INT8 representation.
 
 <br>
 
-> A good quantization scheme produces a smaller model size that can simulate the performance of full precision (or half precision) models with minimal loss in accuracy. This leads to a reduced memory footprint as well as a lower I/O memory bandwidth due to less data being transferred, resulting in an overall reduced inference latency. This enables you to run or deploy LLMs on resource constrained devices or even use larger, better performing models. It can be helpful in increasing serving throughput if you have an LLM that is queried by multiple users.
+A good quantization scheme produces a smaller model size that can simulate the performance of full precision (or half precision) models with minimal loss in accuracy. This leads to a reduced memory footprint as well as a lower I/O memory bandwidth due to less data being transferred, resulting in an overall reduced inference latency. This enables you to run or deploy LLMs on resource constrained devices or even use larger, better performing models. It can be helpful in increasing serving throughput if you have an LLM that is queried by multiple users.
 
 
 <br>
@@ -46,12 +46,12 @@ There are two types of quantization symmetric and asymmetric quantization, each 
 <br>
 
 
-![Illustration detailing both symmetric and asymmetric quantization approaches to quantizing floating-point values in 32 bits to a signed integer in b-width bits  —  Created by Author.](/assets/img/pexels/%20qlora/quantization.png)
+![](/assets/img/pexels/%20qlora/quantization.png)
 
 {:.image-caption}
 *Illustration detailing both symmetric and asymmetric quantization approaches to quantizing floating-point values in 32 bits to a signed integer in b-width bits  —  Created by Author.*
 
-<br><br>
+<br>
 
 > The quantization process in both approaches start by determining the clipping range values, an operation often referred to as calibration. The clipping range in symmetric mode $$[α , −α]$$ is symmetric with respect to zero, while the clipping range $$[α, β]$$ in asymmetric quantization is, unsurprisingly, asymmetric around zero, that is $$−α ≠ β$$. Next we use the clipping range values to compute the quantization parameters $$S$$ and $$Z$$. Afterward, we scale down the input data using $$S$$ (also offsetting with $$Z$$ in asymmetric mode) and round the result to the nearest integer. If the produced value falls outside the limits of the quantized domain, we use the clip operation to restrict it within the specified bounds.
 
@@ -63,7 +63,7 @@ The dequantization process approximates the original floating point values from 
 
 <br>
 
-> It’s important to note that dequantization doesn’t accuratly reconstruct the original float data, due to the quantization error that is introduced by to the rounding and clipping operations in the quantization process. Therefore, the best quantization approach is the one that minimizes this error and effectively reduces information loss associated with reducing precision.
+It’s important to note that dequantization doesn’t accuratly reconstruct the original float data, due to the quantization error that is introduced by to the rounding and clipping operations in the quantization process. Therefore, the best quantization approach is the one that minimizes this error and effectively reduces information loss associated with reducing precision.
 
 
 <br>
@@ -83,7 +83,6 @@ Before delving into the case study, it’s important to point out that the repre
 
 In our case study, I use symmetric quantization to reduce the precision of the Relu output from float32 to int8, meaning, this representation allows for 256 discrete bins ranging from -127 to 127 values:
 
-<br>
 
 ``` python
 X = torch.randn(200, dtype=torch.float32)
@@ -115,7 +114,7 @@ plot_histogram(quantized_data, bit_width, quantized_data)
 
 <br>
 
-> We can clearly see in the histogram that half of the bins to the left of zero are not utilized at all, this leads to a more limited data representation, where instead of utilizing the entire 256 values assumed in an 8-bit representation, it only uses half of that, which is 128 values. This is equivalent to using a 7-bit format ($$2^7=128$$) resulting in one bit that is completely wasted out of the 8 bits.
+We can clearly see in the histogram that half of the bins to the left of zero are not utilized at all, this leads to a more limited data representation, where instead of utilizing the entire 256 values assumed in an 8-bit representation, it only uses half of that, which is 128 values. This is equivalent to using a 7-bit format ($$2^7=128$$) resulting in one bit that is completely wasted out of the 8 bits.
 
 <br>
 
@@ -125,54 +124,46 @@ However, if we use asymmetric quantization on Relu output, the full range of qua
 
 <br>
 
-### *Some background about non-uniform quantization*
+##### *Some background about non-uniform quantization*
 
 Now that you’ve reached this part of the post, I should point out to you that all of the previously mentioned information about quantization relates to linear quantization, otherwise reffered to as uniform quantization, which involves linear scaling with $$S$$ and results in equally spaced quantized values with a constant step size.
 
-<br>
 
 > The constraint of using equally spaced quantized values in uniform quantization is that it creates a representation that may not approximate the distribution of the input data well, increasing the performance gap between the full precision and its quantized counterpart.
 
-<br>
+
 
 That’s why non-uniform quantization also exists. Non-uniform quantization uses a non-linear function which generates values that are not necesseraly equally spaced, i.e, it can use non-constant steps resulting in different quantized levels.
 
-<br>
+
 
 > As such, non-uniform quantization with the same number of bits can create a representation that is more flexible to approximate the distribution of full precision values better, thus reducing the quantization error, leading to a better performance compared to uniform quantization.
 
-<br>
 
 For instance, neural network weights typically follow a Gaussian distribution with most of the values clustered around 0. In this case, applying non-uniform quantization will better represent the distribution of the weights. For example, we can use a non-uniform quantization method with increased resolution or smaller step sizes around 0.
 
-<br>
 
-> However, the challenge with non-uniform quantization is that using non-linear function involves look-up tables and additional logic that is not hardware efficient. Although a lot of recent work has been proposed to address this issue, one example is [Power-Of-Two quantization](https://arxiv.org/abs/2203.05025), which uses a base-2 logarithmic to quantize the numbers into powers of 2, allowing the dot-product to be accomplished using bit shifting instead of multiplication, which is more hardware friendly.
+However, the challenge with non-uniform quantization is that using non-linear function involves look-up tables and additional logic that is not hardware efficient. Although a lot of recent work has been proposed to address this issue, one example is [Power-Of-Two quantization](https://arxiv.org/abs/2203.05025), which uses a base-2 logarithmic to quantize the numbers into powers of 2, allowing the dot-product to be accomplished using bit shifting instead of multiplication, which is more hardware friendly.
 
-<br>
+
 
 Consequently, uniform (linear) quantization is still considered the standard in most libraries that provide quantization support like Nvidia’s [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/precision.md), HuggingFace’s [Quanto](https://huggingface.co/docs/transformers/main/en/quantization#quanto), and PyTorch's built-in quantization module, mainly due to its simpler implementation.
 
 <br>
-<br>
 
-# **GPU Memory Estimation**
+### GPU Memory Estimation
 
 Finetuning large models or simply running inference requires substantial GPU memory because it requires the model weights and intermediate computations to be loaded into the GPU’s memory.
 
-<br>
-
 This memory bottleneck is fundamentally imposed by the von Neumann architecture in current computing systems, where the main system memory is separated from the compute processing units on GPU. Therefore, all data required for neural network computations must be transfered from main memory to GPU memory (VRAM). This data in question includes the model weights, the gradients, the activations and optimizer states, all need to fit into the GPU memory.
-
-<br>
 
 Furthermore, the bottleneck is due to memory hierarchy, where memory component in computing systems can be arranged hierarchically in terms of storage, speed and cost. With the main memory being relatively cheap yet offereing larger storage with slower access to data, while GPU memory being expensive with smaller storage but offereing faster access speeds.
 
-<br>
+
 
 > To give you an idea of how much GPU memory is required for finetuning, a 7 billion parameter model loaded in 16-bit precision format, means each parameter is represented by 2 bytes of memory, thus you need 14 GB of GPU memory just to load the model weights alone. For a 32-bit precision, where each parameter is represented by 4 bytes, you would need 28 GB of GPU memory. Additionally, you have to account for some memory overhead, typically extra GBs to store forward activations, gradients and optimization states.
 
-<br>
+
 
 Memory requirement can be estimed using the following formula :
 
@@ -180,12 +171,10 @@ Memory requirement can be estimed using the following formula :
  $$VRAM\_requirement = total\_number\_of\_parameters\ * \ number\_of\_bytes\_per\_parameter$$
 
 <br>
-<br>
-
 
 <a name="lora"></a>
 
-# **LoRa Overview**
+### LoRa Overview
 
 > As we mentioned above, finetuning language models is computationally expensive, almost prohibitive when dealing with LLMs that contain parameters in the order of tens of billions or more. As a result, many memory-efficient finetuning methods have been developed, one of which is LoRa (Low-Rank Adaptation of Large Language Models) which is introduced as a parameter-efficient finetuning approach that enables finetuning large models on resource-constrained devices, making it possible to adapt powerful language models to downstream tasks for everyone.
 
@@ -193,25 +182,16 @@ Memory requirement can be estimed using the following formula :
 
 The LoRa paper states the following “*LoRa expresses the weight updates ∆W as a low-rank decomposition of the weight matrix*”. Let’s break this down to fully understand what does this mean:
 
-<br>
-
 First, let’s understand the terms, mathematically, the rank of a matrix refers to the number of linearly independent vectors in a matrix. Linearly independent vectors are vectors that can not be produced by linearly combining other vectors. As a result, they are considered the most important ones in the matrix that can not be constructed from others vectors and contain unique information. With this in mind, for an $$m$$ x $$n$$ matrix $$A$$, if the rank of this matrix is less than the number of its columns or rows, $$rank (A) < min(m, n)$$, we say that A is *rank-deficient* or has a *low-rank*.
-
-<br>
 
 The Low-Rank Adaptation paper is influenced by ideas in the [Li et al.](https://arxiv.org/pdf/2012.13255.pdf) and [Aghajanyan et al.](https://arxiv.org/pdf/1804.08838.pdf) papers that show that language models are over-parameterized and have a very low intrinsic dimension that can be effectively represented using fewer dimensions.
 
-<br>
 
 > It turns out that LLMs have a low dimension rank structure, meaning that important features and patterns in the model can be represented using significantly fewer dimensions, efficitively reducing the model complexity.
-
-<br>
-
 
 
 Based on these findings, the authors hypothesized that the finetuned part  $$ΔW$$, which is the change in weights during model adaptation — *where the weights are adapted to the new task* — also has a low intrinsic rank. The change in the weights  $$ΔW$$ refer to the the difference between the finetuned parameters $$W_{finetuned}$$ and the pre-finetuned parameters $$W_{pretrained}$$ in a single layer. 
 
-<br>
 
 ![](/assets/img/pexels/%20qlora/lora_formula.png)
 
@@ -223,40 +203,33 @@ $$∆W$$ having a low rank implies that it can be decomposed into two smaller ma
 
 > Instead of learning the highly dimensional weight update matrix $$ΔW$$ like in regular full finetuning, LoRa approximates $$ΔW$$ with the product of two significantly smaller matrices and learn their parameters instead.
 
-<br>
+
 
 To examine this closely, a $$d$$ x $$k$$ matrix $$ΔW$$ can be factored as $$ΔW=BA$$, where $$A$$ is a $$d$$ x $$r$$ matrix and $$B$$ is a $$r$$ x $$k$$ matrix, where $$r$$ denotes the LoRa rank with $$r << min(d, k)$$. Using this approach, the total number of parameters becomes $$r(d+k)$$ instead of $$d$$ x $$k$$.
 
-<br>
+
 
 For instance, using a linear layer with a $$1000$$ x $$1000$$ weight matrix and a rank value of $$r=3$$, with LoRa, the number of trainable parameters for this layer would be reduced from $$1,000,000$$ to $$6,000$$. This is effectively reducing $$99.4$$% of the parameters in a single layer!
 
-<br>
 
-> *Note that LoRa rank `r` is a hyperparameter that determines the shape of the A and B matrices and evidently, selecting a smaller r value results in far fewer parameters to learn during finetuning, however it might not capture all the knowledge in the new dataset.*
+*Note that LoRa rank `r` is a hyperparameter that determines the shape of the A and B matrices and evidently, selecting a smaller r value results in far fewer parameters to learn during finetuning, however it might not capture all the knowledge in the new dataset.*
 
-<br>
+
 
 Now that we understand that LoRa replaces the weight update matrix $$ΔW$$ of selected layers with much smaller matrices A and B, <i>**how are these matrices created?**</i>
 
-<br>
-
 Initially, the paper mentions that the parameters of matrix $$A$$ are initialized from a random Gaussian distribution while the parameters of matrix $$B$$ are initialized with zeros, this means that $$BA$$ is equal to zero intially before being updated during finetuning.
-
-
 
 Furthermore, $$ΔW$$ is scaled by the factor of $$\dfrac{α}{r}$$ , where $$r$$ is the rank and $$α$$ is a hyperparameter needed for scaling.
 
-<br>
+
 
 > The objective of this scaling is to reduce the risk of adapters overfitting the data when using higher rank value and to maintain a consistent learning behavior for different rank values.
 
-<br>
 
 *Here is a rough code example, but for a detailed description of the implementation please refer to this [section](#4-injecting-lora-trainable-adapters)*.
 
 
-<br>
 
 ``` python
 class LoRaAdapter(nn.Module):
@@ -273,45 +246,26 @@ class LoRaAdapter(nn.Module):
         return result
 ```
 
-<br>
+
 
 > Only $$A$$ and $$B$$ are updated while the original weight matrix $$W_0$$ (the 4-bit quantized) remains frozen. This implies that the gradients and the parameter updates in the backward pass are computed only for A and B, resulting in a significant reduction in memory space used to store the checkpoints during finetuning. As a result, you’ll find that LoRA produces checkpoints of about few MB, unlike the memory intensive full finetuning that typically causes OOM errors. Furthermore, LoRa leads to a substantial reduction in computational costs and massive speed-up in the fine-tuning process since it focuses on a smaller set of parameters instead of updating the billion parameters in the LLM, all while producing a model with a comparable performance to full finetuning.
 
-<br>
-
-
 *Don’t take my word for it, here is the empirical results from the paper:*
-
-
 
 The paper uses GPT-3 175B LLM as an example. Using LoRa finetuning, the number of trainable parameters was reduced by 10,000 times compared to full finetuning. Additionally, VRAM consumption during finetuning decreased from 1.2TB to 350GB, while checkpoint size was downsized from 350GB to 35MB. This translated into a 25% speedup on the finetuning process.
 
-<br>
-
-> To learn more about the training process with LoRa adapters and merging process, you can check this section of the post.
-
-<br>
-
-
 What’s unique about LoRa is that it doesn’t have any inference latency cost. After finetuning, the adapted weight matrices are simply combined with the original parameters. This is exceptionally useful when switching between tasks. That is, you can use the same base model finetuned on different downstream tasks and simply swap LoRa adapters for different tasks, as opposed to reloading multiple large models with the same large size, which is ofcourse memory and time inefficient.
-
-<br>
 
 > Using LoRa, task switching becomes more efficient because it consists of loading the weights of the base model one time and simply swapping the LoRa adapters for different tasks with minimal overhead instead of loading multiple finetuned models with the same large size.
 
-<br>
-
 
 Although LoRa adapters can be injected into any linear layer in the LLM architecture, in the paper, it exclusively injects the adapters into each of the projection matrices in the self-attention module, which are $$W\_{query}$$, $$W\_{key}$$, $$W\_{value}$$, and $$W\_{output}$$.
-
-<br>
-
 
 *You’ll gain a deeper understanding of LoRa in this [section](#4-injecting-lora-trainable-adapters) (part 4, 5, 7).*
 
 <br>
 
-# Technical Deep Dive into Implementing QLoRa
+### Technical Deep Dive into Implementing QLoRa
 
 > Now that we have a solid theoritical understanding of how the LoRa finetuning approach works and some background on quantization, we can delve into how QLoRa combines the two concepts to dramatically reduce GPU memory usage when finetuning large models.
 
@@ -325,9 +279,8 @@ This section aims to be a technical deep dive into implementing QLoRa. Libraries
 * The HuggingFace 🤗 team have [integrated](https://huggingface.co/blog/4bit-transformers-bitsandbytes) `bitsandbytes` with the 🤗 ecosystem, to enable finetuning methods available in `PEFT` to be applied on quantized (4-bit or 8-bit) base models with very few lines of code.
 
 <br>
-<br>
 
-## **1\. Breakdown of 4\-Bit Quantization Using NF4 Data Type**
+#### **1\. Breakdown of 4\-Bit Quantization Using NF4 Data Type**
 
 
 > `bitsandbytes` provides 4-bit quantization using block-wise k-bit quantization, this is applied to linear layers of the model through the `Linear4bit` class, which converts linear modules from `nn.Linear` to a `bnb.nn.Linear4Bit` layers.
@@ -340,16 +293,9 @@ Let's walk through the steps that a weight matrix $$W$$ goes through to be conve
 
 2. Then split $$W$$ into equal sized blocks.
 
-3. Normalize each block with its absolute maximum value to make sure the weights fit within the quantization range of [-1, 1].
-
-<br>
-
-> *This normalization is the scaling operation where the scaling factor S is the absolute maximum value, as a result the scaling factor of each block is stored for the dequantization process as a tensor with a length equal to the number of blocks.*
-
-<br>
+3. Normalize each block with its absolute maximum value to make sure the weights fit within the quantization range of [-1, 1] — *This normalization is the scaling operation where the scaling factor S is the absolute maximum value, as a result the scaling factor of each block is stored for the dequantization process as a tensor with a length equal to the number of blocks.*
 
 4. The actual quantization mapping uses a set of predefined unique 16 float values [$$q\_1, . . . , q\_{16}$$] suggested by the paper to map each value normalized value $$x\_i$$ in the block to the nearest quantized value $$q\_i$$ in the set. These `NF4_quant_levels` are further referenced in both the [paper](https://arxiv.org/pdf/2305.14314) (in Appendix E) and [the](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/bitsandbytes/functional.py#L1087) [code](https://github.com/TimDettmers/bitsandbytes/blob/ffd7d0db6a660c97b60a2c9605309ee4b5cd40e3/csrc/kernels.cu#L3319).
-
 
 ``` python
 NF4_quant_levels = [-1.0, -0.6961928009986877, -0.5250730514526367, -0.39491748809814453, -0.28444138169288635, -0.18477343022823334, -0.09105003625154495, 0.0, 0.07958029955625534, 0.16093020141124725, 0.24611230194568634, 0.33791524171829224, 0.44070982933044434, 0.5626170039176941, 0.7229568362236023, 1.0]
@@ -358,11 +304,10 @@ NF4_quant_levels = [-1.0, -0.6961928009986877, -0.5250730514526367, -0.394917488
 
 <i>So why these `NF4_levels` values in particular?</i>The NF4 data type introduced in the [QLoRa](https://arxiv.org/abs/2305.14314) paper uses *4-bit quantile quantization* to generate a set of quantization levels which are then normalized to fit a range of [-1, 1]. This NF4 levels representation is best suited for normally distributed data with high precision around zero, which is the case for neural network weights which mostly follow Gaussian distribution, hence the name “*Normal Float*”.
 
-<br>
 
 **k-bit quantile quantization** estimates $$2^b$$ equally spaced quantile values $$q\_i$$ where $$b$$ is the desired bit-width for quantization. These estimated quantiles represent the quantization levels based on the quantiles of the normal distribution. To achieve this, the `bitsandbites` library uses the quantile function — also referred to as the inverse cumulative distribution function (ICDF) — implemented using `scipy.stats.norm.ppf` to generate these values. These quantiles are then normalized by the maximum value to achieve a range of [-1, 1]. Furthermore, Qlora uses asymmetric quantization to quantize $$0$$ in the input tensor to a constant non-zero value Z. This results in exactly $$2^{b-1} + 1$$ positive values and $$2^{b-1}$$ negative values in the representation (this makes it 9 positive values and 8 negative values in `NF4_quant_levels`).
 
-<br>
+
 
 **Now that we know from where these value come from**, the `bitsandbites` library uses midpoints between NF4 values as bins and compares each input value $$x\_i$$ to determine which bin the input value $$x\_i$$ falls into. It then assigns $$x\_i$$ to the closest $$q\_i$$ that falls within the bin.
 
@@ -370,35 +315,29 @@ NF4_quant_levels = [-1.0, -0.6961928009986877, -0.5250730514526367, -0.394917488
 
 > **TL;DR :** NF4 uses a mapping table of 16 levels `NF4_quant_levels` to map each input value to the nearest NF4 value. These are quantiles of a theoritical normal distribution that are normalized to fit a range of [-1, 1] to make them compact around 0. This means, the NF4 quantization is an asymmetric, non-uniform quantization scheme that is applied independently to each block of the input weights . These produced floating points quantization levels are ideal for normally distributed data like neural network weights with high precision around zero.
 
-<br><br>
-
-
+<br>
 
 *The following steps 5 and 6 contain additional logic to store the final quantized values:*
 
-5. Each quantization level is represented with a 4 bits binary value as referenced in this [part of the code](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/csrc/kernels.cu#L278). The binary representations are used for storage are in unsigned 4-bit integers format (`uint4`), we will see at end of step 6 why we use the `uint4` representation. For instance, this [function](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/csrc/kernels.cu#L223) uses these binary values to map back to the quantization levels during the dequantization process.
+\5. Each quantization level is represented with a 4 bits binary value as referenced in this [part of the code](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/csrc/kernels.cu#L278). The binary representations are used for storage are in unsigned 4-bit integers format (`uint4`), we will see at end of step 6 why we use the `uint4` representation. For instance, this [function](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/csrc/kernels.cu#L223) uses these binary values to map back to the quantization levels during the dequantization process.
 
-<br>
+
 
 ``` python
 NF4_quant_4bit = [0b0000, 0b0001, 0b0010, 0b0011, 0b0100, 0b0101, 0b0110, 0b0111, 0b1000, 0b1001, 0b1010, 0b1011, 0b1100, 0b1101, 0b1110, 0b1111]
 # decimal representation of the above uint4 binary values:
 NF4_quant_4bit = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15]
 ```
-<br>
 
-6. Finally, pack the quantized 4-bit tensor into `torch.uint8` dtype (an *8-bit unsigned integer representation*).
 
-<br>
+\6. Finally, pack the quantized 4-bit tensor into `torch.uint8` dtype (an *8-bit unsigned integer representation*).
+
 
 > Admittedly, this part intially threw me off, as I was expecting the 4-bit representation to be packed into a 4-bit data type which assumes exactly 16 unique values, not an 8-bit data type with 256 unique values. However, after going through the code, it turns out the author of `bitsandbytes` converts the 4-bit values into 8-bit by packing two 4 bit values into a single 8-bit value, this results ofcourse, in a different shape for the quantized tensor. This is because PyTorch does not support 4-bit data types and the smallest type it supports is 8-bits — as of the writing of this post — Furthermore, the reason it uses an 8-bit integer format and not an 8-bit floating point format (FP8) is due to the lack of native support for FP8 in PyTorch. The packing operation is exactly what Pytorch’s new data type “*quantized 4-bit integer*” `torch.quint4x2` does as well, as you can see in the [documentation](https://pytorch.org/docs/stable/tensors.html#id11). The packing of two 4-bits values to 8 bits is very straightforward using simple bitwise operations. The actual packing step in `bitsandbytes` is performed in this [part of the code](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/csrc/kernels.cu#L819), but make sure to follow along to see our implementation.
 
-<br>
-<br>
 
 *To make sure my understanding of the 4-bits quantization with the NF4 data type (described in the above steps) is accurate, I implemented it from scratch on a small dummy input (first code snippet) and compared it to the `bitsandbytes` implementation (second code). Thankfully, the produced values are exactly equal. Note that the smallest block size used in `bitsandbytes` is 64 elements and since my input $$W$$ has 20 elements, `bitsandbytes` treats the entire tensor as a single block, so I didn't split $$W$$ into smaller blocks.*
 
-<br>
 
 ``` python
 import torch
@@ -459,11 +398,8 @@ tensor([[242],
 
 > To show you how packing the first pair of `quantized_W_4bits` (15, 2) results in 242 in `packed_W_8bits`: packing is a series of bitwise operations, therefore 15 is represented as `1111` in binary, while 2 is is represented as `0010`. Following the packing operation mentioned above `(1111 << 4) | 0010 = 11110000 | 0010 = 11110010` ; `11110010` is equal 242 in decimal.
 
-<br>
 
 *Here is a bitsandbytes code you can run if you want to check the output of 4-bit quantization with NF4 dtype yourself — it results in the same output.*
-
-<br>
 
 ``` python
 import bitsandbytes as bnb 
@@ -509,7 +445,7 @@ Params4bit([[242],
 """
 ```
 
-<br>
+
 
 
 Moreover, the reason `bitsandbytes` uses an unsigned `uint8` for packing instead of signed integers `int8` is that `int8` can represent negative values by reserving the bit furthest to the left as the sign bit. However, during the packing step, the left shifting operation can become tricky when dealing with the sign bit. Using `uint8` removes this complexity, by keeping only the bits of the actual two 4-bit numbers without including the sign bit. That is why, in step 5 it uses the `uint4` format (ranging from 0 to 15) and not `int4` (ranging form -8 to 7) to represent each quatized 4-bit value.
@@ -519,9 +455,9 @@ Moreover, the reason `bitsandbytes` uses an unsigned `uint8` for packing instead
 > **TL;DR** : In step 6, it’s compacting two `uint4` numbers into a single `uint8` number. This implementation effictively reduces the model memory footprint to half of 8-bit format. Memory wise, this is equivalent to using a 4-bit quantization format. This is the current Pytorch implementation of any sub-8 quantization. For instance, in 2-bit quantization (given an efficient quantization mapping scheme with minimal quantization error) each value is mapped into a 2-bit value, then each four 2-bit values are packed into a single 8 bit value, achieving the same memory efficiency as a 2-bit quantization would.
 
 <br>
-<br>
 
-## **2\. Loading and Configuring the NF4 Quantized Model**
+
+#### **2\. Loading and Configuring the NF4 Quantized Model**
 
 
 *In this section, I explain the configuration choices necessary for implementing of 4-bit quantizated model, this is followed by a step by step process for implementing LoRa finetuning using this quantized model.*
@@ -542,16 +478,14 @@ nf4_config = BitsAndBytesConfig(
    bnb_4bit_use_double_quant=True)
 
 # *Using Open LLama 3b model*
-base_NF4_model = AutoModelForCausalLM.from_pretrained("openlm-research/open_llama_3b",
-																											 quantization_config=nf4_config)
-
+base_NF4_model = AutoModelForCausalLM.from_pretrained("openlm-research/open_llama_3b", quantization_config=nf4_config)
 print(base_NF4_model.is_loaded_in_4bit) 
 # Output: True
 ```
 
 <br>
 
-### *What does `bnb_4bit_compute_dtype` do?*
+##### *What does `bnb_4bit_compute_dtype` do?*
 
 In this step, we can specify the data type to use for computation via the `bnb_4bit_compute_dtype` argument. This determines the desired target dtype for the dequantization process (regardless of the dtype used for the input), you’ll see its use in this [section](#7-merging-lora-adapters-to-base-model).
 
@@ -569,13 +503,13 @@ Therefore, it’s recommended to use `bfloat16` as `bnb_4bit_compute_dtype` to p
 
 <br>
 
-### *What does `bnb_4bit_use_double_quant` do?*
+##### *What does `bnb_4bit_use_double_quant` do?*
 
 At the normalization step of block-wise quantization, we mentioned that the scaling factors, which are the absolute maximum values, are stored for dequantization. These scaling factors are essentially quantization constants that require additional space to be stored. To address this, the QLoRa paper suggests a solution to further reduce memory storage, which is to quantize the quantization constants themselves using block-wise quantization. This way, we end up with both quantized weights and their corresponding quantization constants being quantized as well. This is called **double quantization** (or nested quantization). According to the paper, double Quantization saves an average of about 0.37 bits per parameter, approximately 3 GB for a 65B model.
 
 <br>
 
-## 3\. Casting Certain Layers to Full Precision
+#### 3\. Casting Certain Layers to Full Precision
 
 
 After loading the quantized base model, it’s recommended to run the following line of code:
@@ -624,7 +558,7 @@ print(base_NF4_model.is_gradient_checkpointing)
 
 
 
-## 4\. Injecting LoRa Trainable Adapters
+#### 4\. Injecting LoRa Trainable Adapters
 
 Next, we setup `LoraConfig`, where we specify the layers to inject the loRa adapters into, using `target_module`. Alternatively you can select all linear layers instead of just few by setting `target_modules="all-linear"`. *Following my example I specify the attention and MLP modules in `target_modules`.*
 
@@ -646,7 +580,6 @@ lora_config = LoraConfig(
     bias="none")
 ```
 
-<br>
 
 Next, we wrap the configuration `lora_config` with `get_peft_model` to create a trainable `PeftModel` :
 
@@ -656,7 +589,7 @@ Next, we wrap the configuration `lora_config` with `get_peft_model` to create a 
 peft_model = get_peft_model(base_NF4_model, lora_config)
 ```
 
-<br>
+
 
 ***But what does this line of code actullay do ?***
 
@@ -667,53 +600,49 @@ peft_model = get_peft_model(base_NF4_model, lora_config)
 
 <br>
 
-## 5\. Finetuning Process with LoRa
+#### 5\. Finetuning Process with LoRa
 
 *How does the forward & backward phase performed with LoRa adapters?*
 
-
-<br>
-
-![ Illustration showing part of forward pass of input X in layer $$W_Q$$ which we selected to inject loRa adapters into (layer specified in `target_modules`). This implementation is specific to the QLoRa paper, not the LoRa paper — Illustration Created by Author.](/assets/img/pexels/%20qlora/loRa_forward.png)
+![](/assets/img/pexels/%20qlora/LoRa_forward.png)
 
 {:.image-caption}
 *Illustration showing part of forward pass of input X in layer $$W_Q$$ which we selected to inject loRa adapters into (layer specified in `target_modules`). This implementation is specific to the QLoRa paper, not the LoRa paper — Illustration Created by Author.*
 
 
-<br>
 
 * As you can see above, the trainable weight matrices $$A$$ and $$B$$ (which constitute $$ΔW$$) are simply injected into the existing model layer $$W\_Q$$, as opposed to another existing [solution](https://arxiv.org/pdf/1902.00751) that also uses adapters but adds them as separate layers sequentially to the Transformer architecture, introducing additional inference latency. The layer weight itself $$W\_Q$$ is kept frozen.
 
 <a name="rank"></a>
 * LoRa dropout introduced in the QloRa paper and is applied to the input $$X$$ before multiplying by the matrices $$A$$ and $$B$$. You can set the value of the `lora_dropout` hyperparameter in `LoRa_config`.
 
-<br>
 
-![*Inspecting `W_Q`  referred to  in the model architecture as `q_proj`, after injecting the adapters into it. Using OpenLLama as quantized base  model (hence `Linear4bit` class) with a LoRa rank of 8 and a dropout of 0.1 —* Illustration Created by Author.](/assets/img/pexels/%20qlora/Lora_code.png)
+
+![](/assets/img/pexels/%20qlora/Lora_code.png)
+
 {:.image-caption}
 *Inspecting `W_Q`  referred to  in the model architecture as `q_proj`, after injecting the adapters into it. Using OpenLLama as quantized base  model (hence `Linear4bit` class) with a LoRa rank of 8 and a dropout of 0.1 —* Illustration Created by Author.*
 
-<br>
+
 
 > This means, ofcourse, that in the backward pass only a smaller set of parameters are updated, that is, fewer gradients to compute and much less optimizer states to maintain compared to full fine-tuning. This leads to faster, more affordable finetuning with less storage requirements.
 
-<br>
 
-## 6\. Strategies for Reducing GPU Memory Usage in LLM Fine\-tuning with STTrainer
+
+#### 6\. Strategies for Reducing GPU Memory Usage in LLM Fine\-tuning with STTrainer
 
 
 
 Besides quantization and LoRa’s efficient finetuning, which are used as memory saving approaches, there are other methods that are currently prevelant in training LLMs. These methods reduce memory consumption without compromising performance and are related to storing activations, gradients and optimizer states during finetuning.
 
-<br>
+
 
 > *We can easily enable the following techniques using the `TrainingArguments` class from `Transformers`, whose object is then passed to Supervised Fine-tuning Trainer `SFTTrainer` from `TRL` library.*
 
-<br>
+
 
 *The configutation in the following code contains only the settings that pertain to the important training techniques explained in this section for demonstration purposes, it omits necessary configs related to training like batch\_size, learning\_rate, etc. Here is a comprehensive [code of SFTTrainer](https://gist.github.com/younesbelkada/f48af54c74ba6a39a7ae4fd777e72fe8) with complete configuration.*
 
-<br>
 
 ``` python
 training_args =  TrainingArguments(output_dir=output_dir,
@@ -731,29 +660,22 @@ trainer = SFTTrainer(peft_model,
 trainer.train()
 ```
 
-<br>
 
 
-### ***Gradient checkpointing — Saving GPU memory by storing less activations.***
+##### *Gradient checkpointing — Saving GPU memory by storing less activations.*
 
 Gradient checkpointing is a technique used to reduce model memory footprint during backpropagation by storing less activations. Typically in vanilla neural network training, the activations in the forward pass are cached so they can be used in the backward pass to compute the gradients. However for a large model, caching all activations can cause memory overhead. Gradient checkpointing is used to address this issue.
 
-<br>
 
 > The crux of gradient checkpointing is that instead of storing all activations, we store only a subset of them in the forward pass, mainly the high cost operations that are time consuming, while the remaining ones are re-computed on the fly during backpropagation. This reduces memory usage but it takes longer to complete a backward pass.
 
-<br>
-
 I believe the name “*gradient checkpointing*” is somewhat misleading, its alternative name, “*Activation checkpointing”* seems more appropriate. You can enable gradient checkpointing by setting `gradient_checkpointing` to True in `TrainingArguments`.
 
-<br>
 
-### ***Paged optimizer — Saving GPU memory during fine-tuning by moving optimizer states to CPU memory only when GPU memory is fully saturated to avoid out of memory error.***
+##### *Paged optimizer — Saving GPU memory during fine-tuning by moving optimizer states to CPU memory only when GPU memory is fully saturated to avoid out of memory error.*
 
 
 > Optimizer states take up a lot of GPU memory, sometimes more than model weights when using stateful optimizers (unlike stateless optimizers like SGD). For instance `AdamW` maintains 2 states per parameter (the first and second moments of the gradient) that need to be stored in memory. This can quickly lead to memory spikes during finetuning. To overcome this issue QLoRa paper introduces paged optimizers.
-
-<br>
 
 ***How does it work under the hood* ?**
 
@@ -761,16 +683,12 @@ Paged optimizers use automatic page migration of optimizer states from GPU memor
 
 To implement this we set the `optim` argument to `paged_adamw_32bit` in `TrainingArguments` class.
 
-<br>
 
-### ***Gradient Accumulation — Saving GPU memory by performing less parameter updates.***
-
-
+##### *Gradient Accumulation — Saving GPU memory by performing less parameter updates.*
 
 Typically in neural network training, a parameter update is performed for each batch. In gradient accumulation, parameter update is performed after multiple batches, this means gradients are accumulated (summed up) for a number of batches before being used to perform a parameter update. However to ensure the magnitude of gradients
 is within a reasonable range and not too large due to summation, we normalize the loss with the number of accumulation steps.
 
-<br>
 
 > **Furthermore, gradient accumulation simulates training with a larger batch size while actually using smaller batch size**. This is because using accumulated gradients over many smaller batches provides more accurate gradient information, which improves the direction of the parameter updates and speeds up convergence. This is similar to what would be obtained from a single large batch, all while avoiding memory constraints that arise with using large batch sizes.
 
@@ -825,7 +743,7 @@ This process ensures that each of the LoRa adapters are integrated into the quan
 
 <br>
 
-# **LLM Inference Process**
+#### **LLM Inference Process**
 
 Now that we have our quantized models finetuned on our dataset of choice, we can effectively run inference on it (like any other 🤗 model) using the `generate()` method from 🤗 to produce an output as follows:
 
@@ -844,7 +762,7 @@ response = tokenizer.decode(outputs[0])
 
 <br>
 
-### ***Prefill Phase of Inference***
+##### *Prefill Phase of Inference*
 
 
 During the prefill phase, the entire prompt tokens are fed to the model at once and processed in parallel until the first output token is generated.
@@ -876,7 +794,7 @@ It’s important to note that we are using a decoder-only based transformer (mos
 <br>
 
 
-### ***Decoding Phase of Inference***
+##### *Decoding Phase of Inference*
 
 
 The decoding phase contains multiple steps where the model generates tokens one at a time. At each decoding step, the model takes the user prompt coupled with the tokens predicted in previous steps and feeds them into the model to generate the next token.
@@ -895,35 +813,31 @@ At each decoding step, the new token is added to the input sequence, which inclu
 
 <br>
 
-![GIF shows the reconstruction of K (key) and V (value) matrices using the query and value vectors of previous tokens along with those of the new token, with $$x_4$$ as the new token added to the input sequence [$$x_1$$, $$x_2$$, $$x_3$$]. This means the query vector of the new token will be multiplied with the key matrix K. The result of this dot-product (after scaling and applying softmax) is multiplied by the value matrix V —  Illustration Created by Author.](/assets/img/pexels/%20qlora/kv_gif.gif)
+![](/assets/img/pexels/%20qlora/kv_gif.gif)
 
 {:.image-caption}
 *GIF shows the reconstruction of K (key) and V (value) matrices using the query and value vectors of previous tokens along with those of the new token, with $$x_4$$ as the new token added to the input sequence [$$x_1$$, $$x_2$$, $$x_3$$]. This means the query vector of the new token will be multiplied with the key matrix K. The result of this dot-product (after scaling and applying softmax) is multiplied by the value matrix V —  Illustration Created by Author.*
 
-<br>
+
 
 > The challenge that arises in the decoding phase is the need to recompute key and value vectors of all previous tokens at each step, resulting in redundant floating-point operations (FLOPs) and slowing down the decoding process.
 
-<br>
 
-### ***Optimizing decoding phase with KV Caching***
+###### *Optimizing decoding phase with KV Caching*
 
-<br>
 
 The solution to this is to cache the key and value vectors of each token once they are computed to avoid redundant computations. This cache is referred to as the KV-cache, which significantly speeds up the inference process. The KV-cache is first constructed during the prefill phase for all tokens in the prompt. Then at every decoding step, the cache is updated with the new key and value vectors of the newly generated token, making them the only vectors computed at this step.
 
-<br>
 
-![Example of using Q and V caches and computing only query, key and value vectors of the new token $$x_4$$ — Illustration Created by Author.](/assets/img/pexels/%20qlora/kv_cache.png)
+![](/assets/img/pexels/%20qlora/kv_cache.png)
 
 {:.image-caption}
 *Example of using $$Q$$ and $$V$$ caches and computing only query, key and value vectors of the new token $$x_4$$ — Illustration Created by Author.*
 
-<br>
 
 In practice, the KV-cache is just a tuple ($$K\_cache$$, $$V\_cache$$), where each has the shape $$[batch\_size, seq\_len, num\_heads, head\_dim]$$, meaning each attention head in the attention mechanism has a separate KV-cache for keys and values. Here is a pseudocode that demonstrates both the prefill and decoding phases using KV-caching and greedy search decoding for simplicity:
 
-<br>
+
 
 *Here is a pseudo-code of what would the inference process looks like:*
 
@@ -965,13 +879,13 @@ def run_inference(model, tokenizer, prompt, max_new_tokens):
     return tokenizer.decode(model_output_ids)
 ```
 
-<br>
+
 
 Note that we enable KV caching during inference in the `generate()` by enabling the `use_cache` flag.
 
 <br>
 
-# **Decoding Strategies**
+### **Decoding Strategies**
 
 Earlier, we mentioned the greedy search method for selecting the next token, but there are more effective approaches available. Initially, the language model generates a probability distribution over all possible tokens in the vocabulary, the method used to select the next token from this distribution depends on the chosen decoding strategy for text generation.
 
@@ -979,19 +893,19 @@ If you ever had to deal with language model APIs, you may have encountered these
 
 <br>
 
-## *Maximization Based Decoding*
+##### *Maximization Based Decoding*
 
 > *Maximization based decoding selects the next token with the highest probability, that is, it optimizes for model outputs that maximize likelihood. Here are some techniques*:
 
 <br>
 
-### Greedy Search
+###### Greedy Search
 
 Greedy search is a simple, naive method that selects the most likely token at each decoding step to construct the final output sequence. However, because it considers only locally optimal tokens it results in low quality, incoherent text.
 
 <br>
 
-### Beam Search
+###### Beam Search
 
 Beam search is considered a more effective decoding strategy than greedy search, because it’s a search based algorithm that expands the search space at each time step. Instead of simply choosing the single best option at each step like in greedy search, beam search consistently updates of the top K sequences at each step, where K is referred to as the beam width. At the end of the decoding process, we end up with a set of K complete candidate sequences, from which we select the one with the highest probability. As a result, the beam search algorithm is a computationally intensive requiring more model runs than other decoding strategies, because it explores multiple paths by expanding over all selected top k tokens at each decoding step.
 
@@ -1005,22 +919,21 @@ However, this decoding strategy performs poorly on open text generation tasks ge
 
 <br>
 
-## *Sampling based decoding*
+##### *Sampling based decoding*
 
 > *Sampling based decoding introduce some randomness into the decoding process, which results in a more diverse higher quality text generation. This class includes the following techniques* :
 
 <br>
 
 
-![Illustration explaining different sampling decoding methods —  Created by Author.](/assets/img/pexels/%20qlora/decoding_strategies.png)
+![](/assets/img/pexels/%20qlora/decoding_strategies.png)
+
 {:.image-caption}
 *Illustration explaining different sampling decoding methods —  Created by Author.*
 
 <br>
 
-### **Top-k Sampling**
-
-<br>
+###### **Top-k Sampling**
 
 Top-k Sampling introduces randomenss by considering a smaller set of tokens from which we randomly sample the next token from. The chosen tokens are the ones with the highest logit scores, which are unormalized model predictions. This way after applying softmax, the probability distribution is reconstructed and redistributed over this smaller set of candidates, it then samples the next token at random from this new distribution. This approach balances exploring a focused region of highly probable tokens with random sampling. The size of the chosen region is defined by the `top_k` hyperparameter. Here is the exact algorithm:
 
@@ -1028,7 +941,6 @@ Top-k Sampling introduces randomenss by considering a smaller set of tokens from
 2. Set the smallest logit in the top-k logits as a threshold.
 3. Keep only tokens with logit values higher than this threshold. In practice, we do not discard the tokens that are below the threshold, we actually assign them a highly negative value (- inf) to ensure that their produced probability after using softmax is exactly 0.
 
-<br>
 
 
 ```python
@@ -1046,16 +958,12 @@ def top_k_sampling(logits, top_k):
 ```
 
 
-<br>
 
 > Although top-k sampling generates a relatively higher quality text with less repetition than beam search, its challenge lies in choosing an appropriate value for the hyperparameter k, because the choice of k depends mostly on the underlying distribution of logits, which varies ofcouse, from one decoding step to another. For instance, it wouldn’t be suitable to sample a small set of tokens from a flat distribution, nor would it be appropriate to sample a large set from a peaked distribution. As result, the following decoding method, “nucleus sampling” mitigates this issue by making the selection of k dynamic.
 
-<br>
 
-### **Nucleus sampling**
 
-<br>
-
+##### Nucleus sampling
 
 Nucleus sampling (also referred to as top-p sampling) Instead of having to select a k fixed number of tokens, nucleus sampling dynamically selects the set of tokens to sample from at each decoding step, based on a pre-determined probability threshold $$top\_p$$ which ranges from 0 to 1.
 
@@ -1063,7 +971,6 @@ Nucleus sampling (also referred to as top-p sampling) Instead of having to selec
 
 Nucleus sampling starts by determining the smallest set of tokens whose cumulative probability is at least $$top\_p$$ such that $$\sum\_{i=1}^{k}p\_i ≥ top\_p$$. This set of chosen tokens is analogous to a "nucleus” containing the most probable tokens. Once this set S={$$𝑥\_1$$,$$𝑥\_2$$ ,…, $$𝑥\_𝑘$$} is determined, it re-applies the softmax function to redistribute the probability over S, and a token is sampled at random from this new distribution (similar to what we did with top-k sampling).
 
-<br>
 
 Here is the exact algorithm for further understanding:
 
@@ -1075,7 +982,6 @@ Here is the exact algorithm for further understanding:
 6. Sample a token from the normalized distribution.
 
 
-<br>
 
 
 ``` python
@@ -1112,38 +1018,34 @@ def nucleus_sampling(logits, top_p):
 *Here is the huggingface [implementation](https://gist.github.com/thomwolf/1a5a29f6962089e871b94cbd09daf317).*
 
 
-<br>
+
 
 > A smaller `top_p` value considers only the highly probable tokens for sampling, with fewer tokens to choose from the generated text is less creative. Meanwhile a higher `top_p` value results in a more varied and creative output, with the potential risk of generating semantically incoherent text.
 
-<br>
 
-### **Temperature Sampling**
+
+###### *Temperature Sampling*
 
 Temperature Sampling is a calibration method that scales down the unormalized logits using a hyperparameter T which ranges between 0 and 2, before passing them to the softmax function.
 
-<br>
 
 The generated predictions can sometimes be naive, in that, it could produce very peaked probability distribution that results in over-confident predictions for few tokens. To address this, we calibrate the distributation to adjust model confidence by introducing a degree of randomness using temperature. Then as usual with sampling methods, we sample at random from the resulting probability distribution:
 
-<br>
 
 ``` python
 scaled_logits = logits / temperature
 probs = F.softmax(scaled_logits)
 ```
 
-<br>
 
 - **Using a high T value `T>1`**  results in a flatter distribution, where most tokens across the range are probable. This less confident probability distribution leads to a language model output generation that is more stochasitc and creative (though this is not always case).
 
 - **Using a low T value `T<1`** produces a peaked distribution making previously high-probability tokens even more probable. This confident probability distribution leads the language model to generate more consistent deterministic response.
 
-<br>
+
 
 > These sampling techniques can be combined together by modifying the probability distribution sequentially, starting with temperature sampling followed by the sampling methods. This ensures that the selected set of tokens have non-zero probabilities while zeroing out the probabilities of tokens that do not belong to this set. We then randomly sample the next token from the produced distribution using the `torch.multinomial` sampler, which is not to be mistaken with what `numpy.random.choice` does with uniform random sampling — used numpy as an example because the equivalent operation in Pytorch is not as straightforward — `torch.multinomial` samples from the input tensor with or without replacement (when using n>1), ensuring that the selection takes into consideration the probabilities assigned to each token, with tokens having higher probabilities being more likely to be chosen.
 
-<br>
 
 
 
