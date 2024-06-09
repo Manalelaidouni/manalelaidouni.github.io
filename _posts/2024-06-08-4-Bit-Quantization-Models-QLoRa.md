@@ -37,29 +37,29 @@ The concept of quantization originates from the field of signal processing, wher
 
 <br>
 
-<i>**So how is this mapping from floating points to integer values done?**</i> This is achieved using linear scaling with a real value factor $S$ that maps the input range to the output range in the quantized space. This scaling factor $S$ is simply the ratio of the input range to the output range $S = \frac{\beta - \alpha}{\beta\_{\text{quant}} - \alpha\_{\text{quant}}}$. The result is offsetted with an integer zero-point $Z$ value that maps zero in float range to its corresponding zero value in the integer range.
+<i>**So how is this mapping from floating points to integer values done?**</i> This is achieved using linear scaling with a real value factor $$ S $$ that maps the input range to the output range in the quantized space. This scaling factor $$ S $$ is simply the ratio of the input range to the output range $$ S = \frac{\beta - \alpha}{\beta\_{\text{quant}} - \alpha\_{\text{quant}}} $$. The result is offsetted with an integer zero-point $$ Z $$ value that maps zero in float range to its corresponding zero value in the integer range.
 
 <br>
 
-There are two types of quantization symmetric and asymmetric quantization, each computing the quantization parameters $Z$ and $S$ differently. We describe below the two approaches to quantizing real values to a signed b-width bit integer representation. Symmetric quantization creates a quantized space that is symmetric around 0, where the value 0.0 in the float space is mapped exactly to 0 in the integer space. In contrast, asymmetric quantization maps 0.0 to a specific quantized zero-point $Z$. The goal of specifying this point is to ensure that 0.0 in the input data is quantized without error, this can be useful in neural network operations that contain zeros, where we want a consistent result, an example of this would be zero padding.
+There are two types of quantization symmetric and asymmetric quantization, each computing the quantization parameters $$Z$$ and $$S$$ differently. We describe below the two approaches to quantizing real values to a signed b-width bit integer representation. Symmetric quantization creates a quantized space that is symmetric around 0, where the value 0.0 in the float space is mapped exactly to 0 in the integer space. In contrast, asymmetric quantization maps 0.0 to a specific quantized zero-point $$Z$$. The goal of specifying this point is to ensure that 0.0 in the input data is quantized without error, this can be useful in neural network operations that contain zeros, where we want a consistent result, an example of this would be zero padding.
 
 <br>
 
 
-![Illustration detailing both symmetric and asymmetric quantization approaches to quantizing floating-point values in 32 bits to a signed integer in b-width bits  —  Created by Author.](/assets/img/pexels/qlora/quantization.png)
+![Illustration detailing both symmetric and asymmetric quantization approaches to quantizing floating-point values in 32 bits to a signed integer in b-width bits  —  Created by Author.](/assets/img/pexels/%20qlora/quantization.png)
 
 {:.image-caption}
 *Illustration detailing both symmetric and asymmetric quantization approaches to quantizing floating-point values in 32 bits to a signed integer in b-width bits  —  Created by Author.*
 
 <br><br>
 
-> The quantization process in both approaches start by determining the clipping range values, an operation often referred to as calibration. The clipping range in symmetric mode $[α , −α]$ is symmetric with respect to zero, while the clipping range $[α, β]$ in asymmetric quantization is, unsurprisingly, asymmetric around zero, that is $−α ≠ β$. Next we use the clipping range values to compute the quantization parameters $S$ and $Z$. Afterward, we scale down the input data using $S$ (also offsetting with $Z$ in asymmetric mode) and round the result to the nearest integer. If the produced value falls outside the limits of the quantized domain, we use the clip operation to restrict it within the specified bounds.
+> The quantization process in both approaches start by determining the clipping range values, an operation often referred to as calibration. The clipping range in symmetric mode $$[α , −α]$$ is symmetric with respect to zero, while the clipping range $$[α, β]$$ in asymmetric quantization is, unsurprisingly, asymmetric around zero, that is $$−α ≠ β$$. Next we use the clipping range values to compute the quantization parameters $$S$$ and $$Z$$. Afterward, we scale down the input data using $$S$$ (also offsetting with $$Z$$ in asymmetric mode) and round the result to the nearest integer. If the produced value falls outside the limits of the quantized domain, we use the clip operation to restrict it within the specified bounds.
 
 
 <br>
 
 
-The dequantization process approximates the original floating point values from the quantized integer values by simply reversing the quantization operation. This is expressed as $x = S*x_q$ in symmetric mode and $x = S(x_q-Z)$  in asymmetric mode. Dequantization can be used for different reasons, for instance, dequantizing some output that must be fed to an operation requiring greater precision input to ensure better numerical stability or simply dequantizing the output of a network.
+The dequantization process approximates the original floating point values from the quantized integer values by simply reversing the quantization operation. This is expressed as $$x = S*x_q$$ in symmetric mode and $$x = S(x_q-Z)$$  in asymmetric mode. Dequantization can be used for different reasons, for instance, dequantizing some output that must be fed to an operation requiring greater precision input to ensure better numerical stability or simply dequantizing the output of a network.
 
 <br>
 
@@ -74,12 +74,12 @@ It depends mainly on the distribution of the data that we want to quantize. If t
 
 <br>
 
-> It’s important to note that asymmetric quantization is far more complicated than symmetric quantization to implement, as the former includes the additional $Z$ term, which during matrix multiplication, introduces computational overhead leading to increased latency. This pleads the question, if this is the case, why not simply apply symmetric quantizaton on skewed data? Let’s explore this by considering an example with one of most common operations in neural network that systematically generates skewed data, the ReLU activation function.
+> It’s important to note that asymmetric quantization is far more complicated than symmetric quantization to implement, as the former includes the additional $$Z$$ term, which during matrix multiplication, introduces computational overhead leading to increased latency. This pleads the question, if this is the case, why not simply apply symmetric quantizaton on skewed data? Let’s explore this by considering an example with one of most common operations in neural network that systematically generates skewed data, the ReLU activation function.
 
 <br>
 
 
-Before delving into the case study, it’s important to point out that the representational capacity of a $k$-bit width refers to the number of distinct values that can be represented with $k$-bit width, which is $2^k$ possible unique values. For instance, 8-bit quantization allows for 256 discrete values, while 4-bit quantization allows for 16 values. This can be effectively represented with a histogram with each bin representing a single possible value.
+Before delving into the case study, it’s important to point out that the representational capacity of a $$k$$-bit width refers to the number of distinct values that can be represented with $$k$$-bit width, which is $$2^k$$ possible unique values. For instance, 8-bit quantization allows for 256 discrete values, while 4-bit quantization allows for 16 values. This can be effectively represented with a histogram with each bin representing a single possible value.
 
 In our case study, I use symmetric quantization to reduce the precision of the Relu output from float32 to int8, meaning, this representation allows for 256 discrete bins ranging from -127 to 127 values:
 
@@ -109,18 +109,17 @@ plot_histogram(quantized_data, bit_width, quantized_data)
 <br>
 
 
-![](/assets/img/pexels/qlora/symmetric_quant.png)
-
+![](/assets/img/pexels/%20qlora/symmetric_quant.png)
 {:.image-caption}
 *Using symmetric quantization to convert the Relu output from float32 to int8 values, we select the largest absolute value in the data α, and create a clipping range of [ -α , α], then scale the values down  to map them to a quantized domain of [-127, 127]. This representation allows for 256 discrete bins ranging from -127 to 127 values. These quantized limits are depicted in the histogram by the blue and purple vertical lines.  [Link to code for converting to 8-bit via symmetric quantization and histogram plotting](https://gist.github.com/Manalelaidouni/f5243ad2a91ecb3c8602b87ac70ec1d1) — Created by Author.*
 
 <br>
 
-> We can clearly see in the histogram that half of the bins to the left of zero are not utilized at all, this leads to a more limited data representation, where instead of utilizing the entire 256 values assumed in an 8-bit representation, it only uses half of that, which is 128 values. This is equivalent to using a 7-bit format ($2^7=128$) resulting in one bit that is completely wasted out of the 8 bits.
+> We can clearly see in the histogram that half of the bins to the left of zero are not utilized at all, this leads to a more limited data representation, where instead of utilizing the entire 256 values assumed in an 8-bit representation, it only uses half of that, which is 128 values. This is equivalent to using a 7-bit format ($$2^7=128$$) resulting in one bit that is completely wasted out of the 8 bits.
 
 <br>
 
-However, if we use asymmetric quantization on Relu output, the full range of quantized values will be fully utilized, because the clipping range becomes $[r\_{min}=min(X),r\_{max}=max(X)]$ instead of $[ -α= - max(∣X∣) , α=max(∣X∣)]$ which includes the values that actually show up in the input data.
+However, if we use asymmetric quantization on Relu output, the full range of quantized values will be fully utilized, because the clipping range becomes $$[r\_{min}=min(X),r\_{max}=max(X)]$$ instead of $$[ -α= - max(∣X∣) , α=max(∣X∣)]$$ which includes the values that actually show up in the input data.
 
 > To conclude, applying symmetric quantization to skewed data might allocate a significant portion of the quantized rangeto values that are unlikely to occur in practice, which makes asymmetric quantization more suitable for this type of data.
 
@@ -128,7 +127,7 @@ However, if we use asymmetric quantization on Relu output, the full range of qua
 
 ### *Some background about non-uniform quantization*
 
-Now that you’ve reached this part of the post, I should point out to you that all of the previously mentioned information about quantization relates to linear quantization, otherwise reffered to as uniform quantization, which involves linear scaling with $S$ and results in equally spaced quantized values with a constant step size.
+Now that you’ve reached this part of the post, I should point out to you that all of the previously mentioned information about quantization relates to linear quantization, otherwise reffered to as uniform quantization, which involves linear scaling with $$S$$ and results in equally spaced quantized values with a constant step size.
 
 <br>
 
@@ -178,7 +177,7 @@ Furthermore, the bottleneck is due to memory hierarchy, where memory component i
 Memory requirement can be estimed using the following formula :
 
 
- $VRAM\_requirement = total\_number\_of\_parameters\ * \ number\_of\_bytes\_per\_parameter$
+ $$VRAM\_requirement = total\_number\_of\_parameters\ * \ number\_of\_bytes\_per\_parameter$$
 
 <br>
 <br>
@@ -196,7 +195,7 @@ The LoRa paper states the following “*LoRa expresses the weight updates ∆W a
 
 <br>
 
-First, let’s understand the terms, mathematically, the rank of a matrix refers to the number of linearly independent vectors in a matrix. Linearly independent vectors are vectors that can not be produced by linearly combining other vectors. As a result, they are considered the most important ones in the matrix that can not be constructed from others vectors and contain unique information. With this in mind, for an $m$ x $n$ matrix $A$, if the rank of this matrix is less than the number of its columns or rows, $rank (A) < min(m, n)$, we say that A is *rank-deficient* or has a *low-rank*.
+First, let’s understand the terms, mathematically, the rank of a matrix refers to the number of linearly independent vectors in a matrix. Linearly independent vectors are vectors that can not be produced by linearly combining other vectors. As a result, they are considered the most important ones in the matrix that can not be constructed from others vectors and contain unique information. With this in mind, for an $$m$$ x $$n$$ matrix $$A$$, if the rank of this matrix is less than the number of its columns or rows, $$rank (A) < min(m, n)$$, we say that A is *rank-deficient* or has a *low-rank*.
 
 <br>
 
@@ -210,27 +209,27 @@ The Low-Rank Adaptation paper is influenced by ideas in the [Li et al.](https://
 
 
 
-Based on these findings, the authors hypothesized that the finetuned part  $ΔW$, which is the change in weights during model adaptation — *where the weights are adapted to the new task* — also has a low intrinsic rank. The change in the weights  $ΔW$ refer to the the difference between the finetuned parameters $W_{finetuned}$ and the pre-finetuned parameters $W_{pretrained}$ in a single layer. 
+Based on these findings, the authors hypothesized that the finetuned part  $$ΔW$$, which is the change in weights during model adaptation — *where the weights are adapted to the new task* — also has a low intrinsic rank. The change in the weights  $$ΔW$$ refer to the the difference between the finetuned parameters $$W_{finetuned}$$ and the pre-finetuned parameters $$W_{pretrained}$$ in a single layer. 
 
 <br>
 
-![](/assets/img/pexels/qlora/lora_formula.png)
+![](/assets/img/pexels/%20qlora/lora_formula.png)
 
 
 
-$∆W$ having a low rank implies that it can be decomposed into two smaller matrices $A$ and $B$ (hence low-rank decomposition) which are then adapted to the new dataset.
-
-<br>
-
-> Instead of learning the highly dimensional weight update matrix $ΔW$ like in regular full finetuning, LoRa approximates $ΔW$ with the product of two significantly smaller matrices and learn their parameters instead.
+$$∆W$$ having a low rank implies that it can be decomposed into two smaller matrices $$A$$ and $$B$$ (hence low-rank decomposition) which are then adapted to the new dataset.
 
 <br>
 
-To examine this closely, a $d$ x $k$ matrix $ΔW$ can be factored as $ΔW=BA$, where $A$ is a $d$ x $r$ matrix and $B$ is a $r$ x $k$ matrix, where $r$ denotes the LoRa rank with $r << min(d, k)$. Using this approach, the total number of parameters becomes $r(d+k)$ instead of $d$ x $k$.
+> Instead of learning the highly dimensional weight update matrix $$ΔW$$ like in regular full finetuning, LoRa approximates $$ΔW$$ with the product of two significantly smaller matrices and learn their parameters instead.
 
 <br>
 
-For instance, using a linear layer with a $1000$ x $1000$ weight matrix and a rank value of $r=3$, with LoRa, the number of trainable parameters for this layer would be reduced from $1,000,000$ to $6,000$. This is effectively reducing $99.4$% of the parameters in a single layer!
+To examine this closely, a $$d$$ x $$k$$ matrix $$ΔW$$ can be factored as $$ΔW=BA$$, where $$A$$ is a $$d$$ x $$r$$ matrix and $$B$$ is a $$r$$ x $$k$$ matrix, where $$r$$ denotes the LoRa rank with $$r << min(d, k)$$. Using this approach, the total number of parameters becomes $$r(d+k)$$ instead of $$d$$ x $$k$$.
+
+<br>
+
+For instance, using a linear layer with a $$1000$$ x $$1000$$ weight matrix and a rank value of $$r=3$$, with LoRa, the number of trainable parameters for this layer would be reduced from $$1,000,000$$ to $$6,000$$. This is effectively reducing $$99.4$$% of the parameters in a single layer!
 
 <br>
 
@@ -238,15 +237,15 @@ For instance, using a linear layer with a $1000$ x $1000$ weight matrix and a ra
 
 <br>
 
-Now that we understand that LoRa replaces the weight update matrix $ΔW$ of selected layers with much smaller matrices A and B, <i>**how are these matrices created?**</i>
+Now that we understand that LoRa replaces the weight update matrix $$ΔW$$ of selected layers with much smaller matrices A and B, <i>**how are these matrices created?**</i>
 
 <br>
 
-Initially, the paper mentions that the parameters of matrix $A$ are initialized from a random Gaussian distribution while the parameters of matrix $B$ are initialized with zeros, this means that $BA$ is equal to zero intially before being updated during finetuning.
+Initially, the paper mentions that the parameters of matrix $$A$$ are initialized from a random Gaussian distribution while the parameters of matrix $$B$$ are initialized with zeros, this means that $$BA$$ is equal to zero intially before being updated during finetuning.
 
 
 
-Furthermore, $ΔW$ is scaled by the factor of $\dfrac{α}{r}$ , where $r$ is the rank and $α$ is a hyperparameter needed for scaling.
+Furthermore, $$ΔW$$ is scaled by the factor of $$\dfrac{α}{r}$$ , where $$r$$ is the rank and $$α$$ is a hyperparameter needed for scaling.
 
 <br>
 
@@ -276,7 +275,7 @@ class LoRaAdapter(nn.Module):
 
 <br>
 
-> Only $A$ and $B$ are updated while the original weight matrix $W_0$ (the 4-bit quantized) remains frozen. This implies that the gradients and the parameter updates in the backward pass are computed only for A and B, resulting in a significant reduction in memory space used to store the checkpoints during finetuning. As a result, you’ll find that LoRA produces checkpoints of about few MB, unlike the memory intensive full finetuning that typically causes OOM errors. Furthermore, LoRa leads to a substantial reduction in computational costs and massive speed-up in the fine-tuning process since it focuses on a smaller set of parameters instead of updating the billion parameters in the LLM, all while producing a model with a comparable performance to full finetuning.
+> Only $$A$$ and $$B$$ are updated while the original weight matrix $$W_0$$ (the 4-bit quantized) remains frozen. This implies that the gradients and the parameter updates in the backward pass are computed only for A and B, resulting in a significant reduction in memory space used to store the checkpoints during finetuning. As a result, you’ll find that LoRA produces checkpoints of about few MB, unlike the memory intensive full finetuning that typically causes OOM errors. Furthermore, LoRa leads to a substantial reduction in computational costs and massive speed-up in the fine-tuning process since it focuses on a smaller set of parameters instead of updating the billion parameters in the LLM, all while producing a model with a comparable performance to full finetuning.
 
 <br>
 
@@ -303,7 +302,7 @@ What’s unique about LoRa is that it doesn’t have any inference latency cost.
 <br>
 
 
-Although LoRa adapters can be injected into any linear layer in the LLM architecture, in the paper, it exclusively injects the adapters into each of the projection matrices in the self-attention module, which are $W\_{query}$, $W\_{key}$, $W\_{value}$, and $W\_{output}$.
+Although LoRa adapters can be injected into any linear layer in the LLM architecture, in the paper, it exclusively injects the adapters into each of the projection matrices in the self-attention module, which are $$W\_{query}$$, $$W\_{key}$$, $$W\_{value}$$, and $$W\_{output}$$.
 
 <br>
 
@@ -335,11 +334,11 @@ This section aims to be a technical deep dive into implementing QLoRa. Libraries
 
 <br>
 
-Let's walk through the steps that a weight matrix $W$ goes through to be converted to the NF4 data type using block-wise quantization:
+Let's walk through the steps that a weight matrix $$W$$ goes through to be converted to the NF4 data type using block-wise quantization:
 
-1. Flatten the weight matrix $W$ into a one-dimensional sequence.
+1. Flatten the weight matrix $$W$$ into a one-dimensional sequence.
 
-2. Then split $W$ into equal sized blocks.
+2. Then split $$W$$ into equal sized blocks.
 
 3. Normalize each block with its absolute maximum value to make sure the weights fit within the quantization range of [-1, 1].
 
@@ -349,7 +348,7 @@ Let's walk through the steps that a weight matrix $W$ goes through to be convert
 
 <br>
 
-4. The actual quantization mapping uses a set of predefined unique 16 float values [$q\_1, . . . , q\_{16}$] suggested by the paper to map each value normalized value $x\_i$ in the block to the nearest quantized value $q\_i$ in the set. These `NF4_quant_levels` are further referenced in both the [paper](https://arxiv.org/pdf/2305.14314) (in Appendix E) and [the](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/bitsandbytes/functional.py#L1087) [code](https://github.com/TimDettmers/bitsandbytes/blob/ffd7d0db6a660c97b60a2c9605309ee4b5cd40e3/csrc/kernels.cu#L3319).
+4. The actual quantization mapping uses a set of predefined unique 16 float values [$$q\_1, . . . , q\_{16}$$] suggested by the paper to map each value normalized value $$x\_i$$ in the block to the nearest quantized value $$q\_i$$ in the set. These `NF4_quant_levels` are further referenced in both the [paper](https://arxiv.org/pdf/2305.14314) (in Appendix E) and [the](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/bitsandbytes/functional.py#L1087) [code](https://github.com/TimDettmers/bitsandbytes/blob/ffd7d0db6a660c97b60a2c9605309ee4b5cd40e3/csrc/kernels.cu#L3319).
 
 
 ``` python
@@ -361,11 +360,11 @@ NF4_quant_levels = [-1.0, -0.6961928009986877, -0.5250730514526367, -0.394917488
 
 <br>
 
-**k-bit quantile quantization** estimates $2^b$ equally spaced quantile values $q\_i$ where $b$ is the desired bit-width for quantization. These estimated quantiles represent the quantization levels based on the quantiles of the normal distribution. To achieve this, the `bitsandbites` library uses the quantile function — also referred to as the inverse cumulative distribution function (ICDF) — implemented using `scipy.stats.norm.ppf` to generate these values. These quantiles are then normalized by the maximum value to achieve a range of [-1, 1]. Furthermore, Qlora uses asymmetric quantization to quantize $0$ in the input tensor to a constant non-zero value Z. This results in exactly $2^{b-1} + 1$ positive values and $2^{b-1}$ negative values in the representation (this makes it 9 positive values and 8 negative values in `NF4_quant_levels`).
+**k-bit quantile quantization** estimates $$2^b$$ equally spaced quantile values $$q\_i$$ where $$b$$ is the desired bit-width for quantization. These estimated quantiles represent the quantization levels based on the quantiles of the normal distribution. To achieve this, the `bitsandbites` library uses the quantile function — also referred to as the inverse cumulative distribution function (ICDF) — implemented using `scipy.stats.norm.ppf` to generate these values. These quantiles are then normalized by the maximum value to achieve a range of [-1, 1]. Furthermore, Qlora uses asymmetric quantization to quantize $$0$$ in the input tensor to a constant non-zero value Z. This results in exactly $$2^{b-1} + 1$$ positive values and $$2^{b-1}$$ negative values in the representation (this makes it 9 positive values and 8 negative values in `NF4_quant_levels`).
 
 <br>
 
-**Now that we know from where these value come from**, the `bitsandbites` library uses midpoints between NF4 values as bins and compares each input value $x\_i$ to determine which bin the input value $x\_i$ falls into. It then assigns $x\_i$ to the closest $q\_i$ that falls within the bin.
+**Now that we know from where these value come from**, the `bitsandbites` library uses midpoints between NF4 values as bins and compares each input value $$x\_i$$ to determine which bin the input value $$x\_i$$ falls into. It then assigns $$x\_i$$ to the closest $$q\_i$$ that falls within the bin.
 
 <br>
 
@@ -397,7 +396,7 @@ NF4_quant_4bit = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15
 <br>
 <br>
 
-*To make sure my understanding of the 4-bits quantization with the NF4 data type (described in the above steps) is accurate, I implemented it from scratch on a small dummy input (first code snippet) and compared it to the `bitsandbytes` implementation (second code). Thankfully, the produced values are exactly equal. Note that the smallest block size used in `bitsandbytes` is 64 elements and since my input $W$ has 20 elements, `bitsandbytes` treats the entire tensor as a single block, so I didn't split $W$ into smaller blocks.*
+*To make sure my understanding of the 4-bits quantization with the NF4 data type (described in the above steps) is accurate, I implemented it from scratch on a small dummy input (first code snippet) and compared it to the `bitsandbytes` implementation (second code). Thankfully, the produced values are exactly equal. Note that the smallest block size used in `bitsandbytes` is 64 elements and since my input $$W$$ has 20 elements, `bitsandbytes` treats the entire tensor as a single block, so I didn't split $$W$$ into smaller blocks.*
 
 <br>
 
@@ -675,22 +674,22 @@ peft_model = get_peft_model(base_NF4_model, lora_config)
 
 <br>
 
-![ Illustration showing part of forward pass of input X in layer $W_Q$ which we selected to inject loRa adapters into (layer specified in `target_modules`). This implementation is specific to the QLoRa paper, not the LoRa paper — Illustration Created by Author.](/assets/img/pexels/qlora/loRa_forward.png)
+![ Illustration showing part of forward pass of input X in layer $$W_Q$$ which we selected to inject loRa adapters into (layer specified in `target_modules`). This implementation is specific to the QLoRa paper, not the LoRa paper — Illustration Created by Author.](/assets/img/pexels/%20qlora/loRa_forward.png)
 
 {:.image-caption}
-*Illustration showing part of forward pass of input X in layer $W_Q$ which we selected to inject loRa adapters into (layer specified in `target_modules`). This implementation is specific to the QLoRa paper, not the LoRa paper — Illustration Created by Author.*
+*Illustration showing part of forward pass of input X in layer $$W_Q$$ which we selected to inject loRa adapters into (layer specified in `target_modules`). This implementation is specific to the QLoRa paper, not the LoRa paper — Illustration Created by Author.*
 
 
 <br>
 
-* As you can see above, the trainable weight matrices $A$ and $B$ (which constitute $ΔW$) are simply injected into the existing model layer $W\_Q$, as opposed to another existing [solution](https://arxiv.org/pdf/1902.00751) that also uses adapters but adds them as separate layers sequentially to the Transformer architecture, introducing additional inference latency. The layer weight itself $W\_Q$ is kept frozen.
+* As you can see above, the trainable weight matrices $$A$$ and $$B$$ (which constitute $$ΔW$$) are simply injected into the existing model layer $$W\_Q$$, as opposed to another existing [solution](https://arxiv.org/pdf/1902.00751) that also uses adapters but adds them as separate layers sequentially to the Transformer architecture, introducing additional inference latency. The layer weight itself $$W\_Q$$ is kept frozen.
 
 <a name="rank"></a>
-* LoRa dropout introduced in the QloRa paper and is applied to the input $X$ before multiplying by the matrices $A$ and $B$. You can set the value of the `lora_dropout` hyperparameter in `LoRa_config`.
+* LoRa dropout introduced in the QloRa paper and is applied to the input $$X$$ before multiplying by the matrices $$A$$ and $$B$$. You can set the value of the `lora_dropout` hyperparameter in `LoRa_config`.
 
 <br>
 
-![*Inspecting `W_Q`  referred to  in the model architecture as `q_proj`, after injecting the adapters into it. Using OpenLLama as quantized base  model (hence `Linear4bit` class) with a LoRa rank of 8 and a dropout of 0.1 —* Illustration Created by Author.](/assets/img/pexels/qlora/Lora_code.png)
+![*Inspecting `W_Q`  referred to  in the model architecture as `q_proj`, after injecting the adapters into it. Using OpenLLama as quantized base  model (hence `Linear4bit` class) with a LoRa rank of 8 and a dropout of 0.1 —* Illustration Created by Author.](/assets/img/pexels/%20qlora/Lora_code.png)
 {:.image-caption}
 *Inspecting `W_Q`  referred to  in the model architecture as `q_proj`, after injecting the adapters into it. Using OpenLLama as quantized base  model (hence `Linear4bit` class) with a LoRa rank of 8 and a dropout of 0.1 —* Illustration Created by Author.*
 
@@ -801,24 +800,24 @@ merged_final_model = lora_model.merge_and_unload()
 
 For each module specified in `target_modules`, the finetuned LoRa adapters are added to their corresponding original quantized weights.
 
-For instance, $W\_Q$ is updated with the following formula $W\_Q$ = $W\_Q$ + $ΔW$.
+For instance, $$W\_Q$$ is updated with the following formula $$W\_Q$$ = $$W\_Q$$ + $$ΔW$$.
 
 <br>
 
-> It's important to note that we dequantize the original weight matrix $W\_Q$ from `NF4` to `bfloat16` — the computation dtype we specified in `BitsAndBytesConfig` — before merging. Dequantization is necessary here to perform the addition operation in higher precision format and maintain as much accuracy as possible.
+> It's important to note that we dequantize the original weight matrix $$W\_Q$$ from `NF4` to `bfloat16` — the computation dtype we specified in `BitsAndBytesConfig` — before merging. Dequantization is necessary here to perform the addition operation in higher precision format and maintain as much accuracy as possible.
 
 <br>
 
 Here are the exact merging steps :
 
-1. Compute $ΔW$ for $W\_Q$ using its corresponding finetuned LoRa weights `A` and `B` as follows:
-    $ΔW = A  *  B  * scale\_factor$
-    where $scale\_factor=\dfrac{α}{r}$ as mentioned in the LoRa overview [section](#lora).
+1. Compute $$ΔW$$ for $$W\_Q$$ using its corresponding finetuned LoRa weights `A` and `B` as follows:
+    $$ΔW = A  *  B  * scale\_factor$$
+    where $$scale\_factor=\dfrac{α}{r}$$ as mentioned in the LoRa overview [section](#lora).
 
-2. Dequantize the original weight matrix $W\_Q$ from `NF4` to `bfloat16`.
+2. Dequantize the original weight matrix $$W\_Q$$ from `NF4` to `bfloat16`.
 
 3. Add the LoRA adapters to the dequantized weight :
-$dequantized\_W\_Q$ = $dequantized\_W\_Q$+ ΔW
+$$dequantized\_W\_Q$$ = $$dequantized\_W\_Q$$+ ΔW
 
 4. Quantize the merged weight back to the original 4-bit quantization with NF4 dtype.
 
@@ -856,7 +855,7 @@ It’s important to note that we are using a decoder-only based transformer (mos
 
 <br>
 
-![The figure visualizes single head attention with a single sample (not a batch) as input for simplicity. However, transformer-based models currently use multi-head attention (MHA), which allows multiple heads to capture different representations of relationships within the input sequence, resulting in a final representation with a strong contextual understanding of the input — Illustration Created by Author.](/assets/img/pexels/qlora/attention.png)
+![The figure visualizes single head attention with a single sample (not a batch) as input for simplicity. However, transformer-based models currently use multi-head attention (MHA), which allows multiple heads to capture different representations of relationships within the input sequence, resulting in a final representation with a strong contextual understanding of the input — Illustration Created by Author.](/assets/img/pexels/%20qlora/attention.png)
 
 {:.image-caption}
 *The figure visualizes single head attention with a single sample (not a batch) as input for simplicity. However, transformer-based models currently use multi-head attention (MHA), which allows multiple heads to capture different representations of relationships within the input sequence, resulting in a final representation with a strong contextual understanding of the input — Illustration Created by Author.*
@@ -864,11 +863,11 @@ It’s important to note that we are using a decoder-only based transformer (mos
 
 <br>
 
-> If you're wondering how multi-head attention (MHA) differs from the single-head attention shown in the figure, here's a short overview: MHA splits the generated Q, K, and V matrices with an assumed size of [batch\_size, seq\_len, embed\_dim] along the `embed_dim` dimension into `num_heads` parts. This way, each head gets its own set of $Q$, $K$, and $V$ matrices of shape [batch\_size, seq\_len, d\_k] with `d_k = embed_dim/num_heads` (hence the scaling by d\_k in the operation).
+> If you're wondering how multi-head attention (MHA) differs from the single-head attention shown in the figure, here's a short overview: MHA splits the generated Q, K, and V matrices with an assumed size of [batch\_size, seq\_len, embed\_dim] along the `embed_dim` dimension into `num_heads` parts. This way, each head gets its own set of $$Q$$, $$K$$, and $$V$$ matrices of shape [batch\_size, seq\_len, d\_k] with `d_k = embed_dim/num_heads` (hence the scaling by d\_k in the operation).
 
 <br>
 
-> However, in practice we use reshaping instead of splitting to apply the scaled dot product (i.e., the attention operation) on a single matrix so that the computation becomes efficiently parallelized. The reshaping is followed by a simple dimension permutation to get $Q$, $K$, and $V$ to have the [batch\_size, num\_heads, seq\_len, d\_k] dimension. This way, the same attention operation is computed independently (just like in the figure) to get the weighted sum of values from each head ($Y\_1$, $Y\_2$, ..., $Y\_h$). The final concatenation of the results from all heads is just another tensor reshaping followed by a linear transformation to project the combined context vectors back to the dimenstion of the input $X$ [batch\_size, seq\_length, embed\_dim].
+> However, in practice we use reshaping instead of splitting to apply the scaled dot product (i.e., the attention operation) on a single matrix so that the computation becomes efficiently parallelized. The reshaping is followed by a simple dimension permutation to get $$Q$$, $$K$$, and $$V$$ to have the [batch\_size, num\_heads, seq\_len, d\_k] dimension. This way, the same attention operation is computed independently (just like in the figure) to get the weighted sum of values from each head ($$Y\_1$$, $$Y\_2$$, ..., $$Y\_h$$). The final concatenation of the results from all heads is just another tensor reshaping followed by a linear transformation to project the combined context vectors back to the dimenstion of the input $$X$$ [batch\_size, seq\_length, embed\_dim].
 
 <br>
 
@@ -896,10 +895,10 @@ At each decoding step, the new token is added to the input sequence, which inclu
 
 <br>
 
-![GIF shows the reconstruction of K (key) and V (value) matrices using the query and value vectors of previous tokens along with those of the new token, with $x_4$ as the new token added to the input sequence [$x_1$, $x_2$, $x_3$]. This means the query vector of the new token will be multiplied with the key matrix K. The result of this dot-product (after scaling and applying softmax) is multiplied by the value matrix V —  Illustration Created by Author.](/assets/img/pexels/qlora/kv_gif.gif)
+![GIF shows the reconstruction of K (key) and V (value) matrices using the query and value vectors of previous tokens along with those of the new token, with $$x_4$$ as the new token added to the input sequence [$$x_1$$, $$x_2$$, $$x_3$$]. This means the query vector of the new token will be multiplied with the key matrix K. The result of this dot-product (after scaling and applying softmax) is multiplied by the value matrix V —  Illustration Created by Author.](/assets/img/pexels/%20qlora/kv_gif.gif)
 
 {:.image-caption}
-*GIF shows the reconstruction of K (key) and V (value) matrices using the query and value vectors of previous tokens along with those of the new token, with $x_4$ as the new token added to the input sequence [$x_1$, $x_2$, $x_3$]. This means the query vector of the new token will be multiplied with the key matrix K. The result of this dot-product (after scaling and applying softmax) is multiplied by the value matrix V —  Illustration Created by Author.*
+*GIF shows the reconstruction of K (key) and V (value) matrices using the query and value vectors of previous tokens along with those of the new token, with $$x_4$$ as the new token added to the input sequence [$$x_1$$, $$x_2$$, $$x_3$$]. This means the query vector of the new token will be multiplied with the key matrix K. The result of this dot-product (after scaling and applying softmax) is multiplied by the value matrix V —  Illustration Created by Author.*
 
 <br>
 
@@ -915,14 +914,14 @@ The solution to this is to cache the key and value vectors of each token once th
 
 <br>
 
-![Example of using Q and V caches and computing only query, key and value vectors of the new token $x_4$ — Illustration Created by Author.](/assets/img/pexels/qlora/kv_cache.png)
+![Example of using Q and V caches and computing only query, key and value vectors of the new token $$x_4$$ — Illustration Created by Author.](/assets/img/pexels/%20qlora/kv_cache.png)
 
 {:.image-caption}
-*Example of using $Q$ and $V$ caches and computing only query, key and value vectors of the new token $x_4$ — Illustration Created by Author.*
+*Example of using $$Q$$ and $$V$$ caches and computing only query, key and value vectors of the new token $$x_4$$ — Illustration Created by Author.*
 
 <br>
 
-In practice, the KV-cache is just a tuple ($K\_cache$, $V\_cache$), where each has the shape $[batch\_size, seq\_len, num\_heads, head\_dim]$, meaning each attention head in the attention mechanism has a separate KV-cache for keys and values. Here is a pseudocode that demonstrates both the prefill and decoding phases using KV-caching and greedy search decoding for simplicity:
+In practice, the KV-cache is just a tuple ($$K\_cache$$, $$V\_cache$$), where each has the shape $$[batch\_size, seq\_len, num\_heads, head\_dim]$$, meaning each attention head in the attention mechanism has a separate KV-cache for keys and values. Here is a pseudocode that demonstrates both the prefill and decoding phases using KV-caching and greedy search decoding for simplicity:
 
 <br>
 
@@ -1013,7 +1012,7 @@ However, this decoding strategy performs poorly on open text generation tasks ge
 <br>
 
 
-![Illustration explaining different sampling decoding methods —  Created by Author.](/assets/img/pexels/qlora/decoding_strategies.png)
+![Illustration explaining different sampling decoding methods —  Created by Author.](/assets/img/pexels/%20qlora/decoding_strategies.png)
 {:.image-caption}
 *Illustration explaining different sampling decoding methods —  Created by Author.*
 
@@ -1058,11 +1057,11 @@ def top_k_sampling(logits, top_k):
 <br>
 
 
-Nucleus sampling (also referred to as top-p sampling) Instead of having to select a k fixed number of tokens, nucleus sampling dynamically selects the set of tokens to sample from at each decoding step, based on a pre-determined probability threshold $top\_p$ which ranges from 0 to 1.
+Nucleus sampling (also referred to as top-p sampling) Instead of having to select a k fixed number of tokens, nucleus sampling dynamically selects the set of tokens to sample from at each decoding step, based on a pre-determined probability threshold $$top\_p$$ which ranges from 0 to 1.
 
 <br>
 
-Nucleus sampling starts by determining the smallest set of tokens whose cumulative probability is at least $top\_p$ such that $\sum\_{i=1}^{k}p\_i ≥ top\_p$. This set of chosen tokens is analogous to a "nucleus” containing the most probable tokens. Once this set S={$𝑥\_1$,$𝑥\_2$ ,…, $𝑥\_𝑘$} is determined, it re-applies the softmax function to redistribute the probability over S, and a token is sampled at random from this new distribution (similar to what we did with top-k sampling).
+Nucleus sampling starts by determining the smallest set of tokens whose cumulative probability is at least $$top\_p$$ such that $$\sum\_{i=1}^{k}p\_i ≥ top\_p$$. This set of chosen tokens is analogous to a "nucleus” containing the most probable tokens. Once this set S={$$𝑥\_1$$,$$𝑥\_2$$ ,…, $$𝑥\_𝑘$$} is determined, it re-applies the softmax function to redistribute the probability over S, and a token is sampled at random from this new distribution (similar to what we did with top-k sampling).
 
 <br>
 
@@ -1070,7 +1069,7 @@ Here is the exact algorithm for further understanding:
 
 1. Apply softmax to generate probabilities over all tokens in the vocabulary.
 2. Sort the tokens based on their probabilities in descending order.
-3. Include tokens in the final set, starting from the top token with the highest probability, then add the tokens one by one until the cumulative probability of the tokens in this set is at least $top\_p$, that is, we should stop at the token $x\_k$ with a cumulative probability that first exceeds the threshold $top\_p$ . This means we include tokens $𝑥\_1$,$𝑥\_2$ ,…, $𝑥\_𝑘$ in the nucleus S.
+3. Include tokens in the final set, starting from the top token with the highest probability, then add the tokens one by one until the cumulative probability of the tokens in this set is at least $$top\_p$$, that is, we should stop at the token $$x\_k$$ with a cumulative probability that first exceeds the threshold $$top\_p$$ . This means we include tokens $$𝑥\_1$$,$$𝑥\_2$$ ,…, $$𝑥\_𝑘$$ in the nucleus S.
 4. Set the logits of the tokens not in the nucleus set *S* to −inf. This effectively removes these tokens from consideration in the next sampling step.
 5. Re-apply the softmax function to the modified logits to get the new probability distribution over the nucleus set *S*.
 6. Sample a token from the normalized distribution.
@@ -1148,4 +1147,4 @@ probs = F.softmax(scaled_logits)
 
 
 
-*Now that we understand what each strategy achieves in tuning the desired LLM response, the recommendation is as follow: you’d want to increase randomness to encourage exploration and diversity in generated text for creative tasks like storytelling (configure higher values for T | top-k | top-p). However excessive randomness can lead to meaningless outputs. Meanwhile too little to no randomness leads to a more predictable and consistent outputs, which is useful for tasks that require precise and consistent responses like machine translation (decrease T | top-k | top-p) but might cause the model to repeat itself or generate very generic responses.*
+*Now that we understand what each strategy achieves in tuning the desired LLM response, the recommendation is as follow: you’d want to increase randomness to encourage exploration and diversity in generated text for creative tasks like storytelling (configure higher values for T \| top-k \| top-p). However excessive randomness can lead to meaningless outputs. Meanwhile too little to no randomness leads to a more predictable and consistent outputs, which is useful for tasks that require precise and consistent responses like machine translation (decrease T \| top-k \| top-p) but might cause the model to repeat itself or generate very generic responses.*
