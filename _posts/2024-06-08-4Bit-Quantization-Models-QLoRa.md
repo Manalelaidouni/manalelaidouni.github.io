@@ -356,6 +356,7 @@ NF4_quant_4bit = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15
 
 6\. Finally, pack the quantized 4-bit tensor into **`torch.uint8`** dtype (*an 8-bit unsigned integer representation*).
 
+<br>
 
 > Admittedly, this part intially threw me off, as I was expecting the 4-bit representation to be packed into a 4-bit data type which assumes exactly 16 unique values, not an 8-bit data type with 256 unique values. However, after going through the code, it turns out the author of bitsandbytes converts the 4-bit values into 8-bit by packing two 4 bit values into a single 8-bit value, this results ofcourse, in a different shape for the quantized tensor. This is because PyTorch does not support 4-bit data types and the smallest type it supports is 8-bits — as of the writing of this post
 >
@@ -424,7 +425,7 @@ tensor([[242],
 <br>
 
 
-To show you how packing the first pair of **`quantized_W_4bits`** (15, 2) results in 242 in `packed_W_8bits`: packing is a series of bitwise operations, therefore 15 is represented as **`1111`** in binary, while 2 is is represented as **`0010`**. Following the packing operation mentioned above **`(1111 << 4) | 0010 = 11110000 | 0010 = 11110010`** ; **`11110010`** is equal 242 in decimal format.
+To show you how packing the first pair of **`quantized_W_4bits`** (15, 2) results in 242 in **`packed_W_8bits`**: packing is a series of bitwise operations, therefore 15 is represented as **`1111`** in binary, while 2 is is represented as **`0010`**. Following the packing operation mentioned above **`(1111 << 4) | 0010 = 11110000 | 0010 = 11110010`** ; **`11110010`** is equal 242 in decimal format.
 
 <br>
 
@@ -478,7 +479,7 @@ Params4bit([[242],
 <br>
 
 
-Moreover, the reason bitsandbytes uses an unsigned **`uint8`** for packing instead of signed integers **`int8`** is that **`int8`** can represent negative values by reserving the bit furthest to the left as the sign bit. However, during the packing step, the left shifting operation can become tricky when dealing with the sign bit. Using **`uint8`** removes this complexity, by keeping only the bits of the actual two 4-bit numbers without including the sign bit. That is why, in step 5 it uses the **`uint4`** format (ranging from 0 to 15) and not `int4` (ranging form -8 to 7) to represent each quatized 4-bit value.
+Moreover, the reason bitsandbytes uses an unsigned **`uint8`** for packing instead of signed integers **`int8`** is that **`int8`** can represent negative values by reserving the bit furthest to the left as the sign bit. However, during the packing step, the left shifting operation can become tricky when dealing with the sign bit. Using **`uint8`** removes this complexity, by keeping only the bits of the actual two 4-bit numbers without including the sign bit. That is why, in step 5 it uses the **`uint4`** format (ranging from 0 to 15) and not **`int4`** (ranging form -8 to 7) to represent each quatized 4-bit value.
 
 <br>
 
@@ -493,7 +494,7 @@ In this section, I explain the configuration choices necessary for implementing 
 
 <br>
 
-> Up to this point, we have a model whose linear layers are quantized as NormalFloat 4-bit data type (NF4) and converted from **`nn.Linear`** to **`bnb.nn.Linear4Bit`**. Thanks to the integration of the two libraries (bitsandbytes and 🤗’s `Transformers`), it only takes one step to load the model and quantize it, by enabling **`load_in_4bit`** flag and setting `bnb_4bit_quant_type` to NF4 using `BitsAndBytesConfig` from `Transformer` as follows.
+> Up to this point, we have a model whose linear layers are quantized as NormalFloat 4-bit data type (NF4) and converted from **`nn.Linear`** to **`bnb.nn.Linear4Bit`**. Thanks to the integration of the two libraries (bitsandbytes and 🤗’s **`Transformers`**), it only takes one step to load the model and quantize it, by enabling **`load_in_4bit`** flag and setting **`bnb_4bit_quant_type`** to NF4 using **`BitsAndBytesConfig`** from **`Transformer`** as follows.
 
 <br>
 
@@ -518,11 +519,11 @@ print(base_NF4_model.is_loaded_in_4bit)
 We can specify the data type to use for computation via the **`bnb_4bit_compute_dtype`** argument. This determines the desired target dtype for the dequantization process (regardless of the dtype used for the input), you’ll see its use in this [section](#7-merging-lora-adapters-to-base-model).
 
 
-Furthermore, you can set `bnb_4bit_compute_dtype` to **`float32`** (the default) or **`bfloat16`** (16-bit BrainFloat), if you’re not familiar with with **`bfloat16`**, this is a great opportunity to learn about it as it’s commonly used in deep learning. Here is what you need to know:
+Furthermore, you can set **`bnb_4bit_compute_dtype`** to **`float32`** (the default) or **`bfloat16`** (16-bit BrainFloat), if you’re not familiar with with **`bfloat16`**, this is a great opportunity to learn about it as it’s commonly used in deep learning. Here is what you need to know:
 
 <br>
 
-> **16-bit BrainFloat** is a floating point representation developed by Google Brain tailored for deep learning models. This representation has the same number of bits as `float16` but with a different allocation of bits, assigning 8 bits for the exponent as opposed to 5 bits in `float16`. The increased exponent width offers a larger dynamic range, meaning it can represent a larger range of values (dynamic range is the ratio of the largest to smallest positive value). As a result, **`bfloat16`** has a comparabale performance as `float32` with half the number of bits. This offers more flexibility to represent smaller and larger values in the network, reducing numerical underflows and overflows all while using less memory during training.
+> **16-bit BrainFloat** is a floating point representation developed by Google Brain tailored for deep learning models. This representation has the same number of bits as **`float16`** but with a different allocation of bits, assigning 8 bits for the exponent as opposed to 5 bits in **`float16`**. The increased exponent width offers a larger dynamic range, meaning it can represent a larger range of values (dynamic range is the ratio of the largest to smallest positive value). As a result, **`bfloat16`** has a comparabale performance as **`float32`** with half the number of bits. This offers more flexibility to represent smaller and larger values in the network, reducing numerical underflows and overflows all while using less memory during training.
 
 <br>
 
@@ -550,13 +551,13 @@ base_NF4_model = prepare_model_for_kbit_training(base_NF4_model)
 
 ***What does it actually do?***
 
-After quantizing all of the linear layers in the model, it’s important to cast some layers back to **`float32`** (fp32) for a better numerical stability. This function casts some layers to `float32`. Specifically, it upcast any normalization layer (*BatchNormalization* or *LayerNormalization*) to fp32 because they contain reduction operations like sum and average, which can cause NaN loss values when performed with reduced precision. Therefore, to maintain as much information as possible, we use higher number of bits.
+After quantizing all of the linear layers in the model, it’s important to cast some layers back to `float32` (fp32) for a better numerical stability. This function casts some layers to `float32`, specifically, it upcast all normalization layer (*BatchNormalization* or *LayerNormalization*) to fp32 because they contain reduction operations like sum and average, which can cause NaN loss values when performed with reduced precision. Therefore, to maintain as much information as possible, we use higher number of bits.
 
 
 
 In addition to normalization layers, the function also upcasts the embedding and LM head layers. Furthermore, it freezes the entire model and enables gradient checkpointing, which we will discuss [later](#gradient-checkpointing--saving-gpu-memory-by-storing-less-activations) in the post.
 
-Inspecting the model before calling **`prepare_model_for_kbit_training`** :
+Inspecting the model before calling `prepare_model_for_kbit_training` :
 
 ``` python
 # normalization - embedding - LM head layers
@@ -567,7 +568,7 @@ print(base_NF4_model.is_gradient_checkpointing)
 # Output : False
 ```
 
-After calling **`prepare_model_for_kbit_training`** :
+After calling `prepare_model_for_kbit_training` :
 
 ```
 print(base_NF4_model.model.norm.weight.dtype, base_NF4_model.lm_head.weight.dtype, base_NF4_model.model.embed_tokens.weight.dtype)
@@ -583,7 +584,7 @@ print(base_NF4_model.is_gradient_checkpointing)
 
 #### 4\. Injecting LoRa Trainable Adapters
 
-Next, we setup `LoraConfig`, where we specify the layers to inject the loRa adapters into, using `target_module`. Alternatively you can select all linear layers instead of just few by setting **`target_modules="all-linear"`**. *Following my example I specify the attention and MLP modules in `target_modules`.*
+Next, we setup `LoraConfig`, where we specify the layers to inject the loRa adapters into, using `target_module`. Alternatively you can select all linear layers instead of just few by setting `target_modules="all-linear"`. *Following my example I specify the attention and MLP modules in `target_modules`.*
 
 
 This is also where we define the rank dimension, which determines the shape of the adapter matrices, as well as the Lora dropout, which we mention its use at this [section](#rank).
@@ -787,7 +788,8 @@ response = tokenizer.decode(outputs[0])
 
 <br>
 
-> *I bet you guessed the next question : but what is actually happening during inference to produce our desired response?* To answer this question, this section describes the inference process which takes in a prompt as input and generates a response. LLM inference consists of two phases, prefill and decoding :
+
+> *I bet you guessed the next question : what actually happens during inference to generate our desired response?* To answer this question, this section describes the inference process which takes in a prompt as input and generates a response. LLM inference consists of two phases, prefill and decoding :
 
 <br>
 
