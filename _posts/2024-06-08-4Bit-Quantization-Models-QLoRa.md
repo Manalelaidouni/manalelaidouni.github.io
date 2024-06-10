@@ -25,7 +25,8 @@ By the end of this post, you should have a deep understanding of:
 6. Decoding strategies with implementation from scratch.
 
 - [Quantization Overview](#quantization-overview)
-   * [Some background on non-uniform quantization](#some-background-on-non-uniform-quantization)
+   * [Choosing Between Symmetric and Asymmetric Quantization](#choosing-between-symmetric-and-asymmetric-quantization)
+   * [Some Background on Non-Uniform Quantization](#some-background-on-non-uniform-quantization)
 - [GPU Memory Estimation](#gpu-memory-estimation)
 - [LoRa Overview](#lora-overview)
 - [Technical Deep Dive into Implementing QLoRa](#technical-deep-dive-into-implementing-qlora)
@@ -94,6 +95,8 @@ It’s important to note that dequantization doesn’t accuratly reconstruct the
 
 With two quantization schemes, the question arises, <i>**when should each approach be used?**</i>
 
+#### *Choosing between symmetric and asymmetric quantization*
+
 It depends mainly on the distribution of the data that we want to quantize. If the original data is normally distributed, symmetric quantization is preferred, whereas asymmetric quantization is more suitable for skewed data.
 
 <br>
@@ -153,6 +156,8 @@ However, if we use asymmetric quantization on Relu output, the full range of qua
 <br>
 
 #### *Some background on non-uniform quantization*
+
+
 
 Now that you’ve reached this part of the post, I should point out to you that all of the previously mentioned information about quantization relates to linear quantization, otherwise reffered to as uniform quantization, which involves linear scaling with $$S$$ and results in equally spaced quantized values with a constant step size.
 
@@ -381,8 +386,7 @@ NF4_quant_4bit = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15
 
 6\. Finally, pack the quantized 4-bit tensor into **`torch.uint8`** dtype (*an 8-bit unsigned integer representation*).
 
-##### *Explaining How 4-Bit Values Are Compacted into 8-Bit Formats*
-<br>
+##### Explaining How 4-Bit Values Are Compacted into 8-Bit Formats:
 
 > Admittedly, this part intially threw me off, as I was expecting the 4-bit representation to be packed into a 4-bit data type which assumes exactly 16 unique values, not an 8-bit data type with 256 unique values. However, after going through the code, it turns out the author of bitsandbytes converts the 4-bit values into 8-bit by packing two 4 bit values into a single 8-bit value, this results ofcourse, in a different shape for the quantized tensor. This is because PyTorch does not support 4-bit data types and the smallest type it supports is 8-bits — as of the writing of this post
 >
