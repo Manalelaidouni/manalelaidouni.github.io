@@ -18,11 +18,36 @@ This gap prompted me to explore the library thoroughly and write the most compre
 By the end of this post, you should have a deep understanding of:
 
 1. How LLM quantization works and the theory behind LoRa.
-2. How 4-bit quantization works with the NF4 data type step-by step along with an implementation from scratch of NF4 quantization that returns the exact result as the bitsandbytes implementation.
+2. How 4-bit quantization works with the NF4 dtype in detail along with an implementation from scratch of NF4 quantization that returns the exact result as the bitsandbytes implementation.
 3. Other memory saving techniques that are useful when dealing with limited memory.
 4. The implementation of QLoRa including injection, finetuning, and final merging with the base model, with a detailed code walkthrough (PEFT code abstracts a lot of things).
 5. Large language model (LLM) inference process with KV caching.
 6. Decoding strategies with implementation from scratch.
+
+- [Quantization Overview](#quantization-overview)
+   * [Some background on non-uniform quantization](#some-background-on-non-uniform-quantization)
+- [GPU Memory Estimation](#gpu-memory-estimation)
+- [LoRa Overview](#lora-overview)
+- [Technical Deep Dive into Implementing QLoRa](#technical-deep-dive-into-implementing-qlora)
+   * [1\. Breakdown of 4\-Bit Quantization Using NF4 Data Type](#1-breakdown-of-4-bit-quantization-using-nf4-data-type)
+  	 * [Explaining How 4-Bit Values Are Compacted into 8-Bit Formats](#explaining-how-4-bit-values-are-compacted-into-8-bit-formats)
+   * [2\. Loading and Configuring the NF4 Quantized Model](#2-loading-and-configuring-the-nf4-quantized-model)
+   * [3\. Casting Certain Layers to Full Precision](#3-casting-certain-layers-to-full-precision)
+   * [4\. Injecting LoRa Trainable Adapters](#4-injecting-lora-trainable-adapters)
+   * [5\. Finetuning Process with LoRa](#5-finetuning-process-with-lora)
+   * [6\. Strategies for Reducing GPU Memory Usage in LLM Fine\-tuning with STTrainer](#6-strategies-for-reducing-gpu-memory-usage-in-llm-fine-tuning-with-sttrainer)
+   * [7\. Merging LoRa adapters to base model](#7-merging-lora-adapters-to-base-model)
+- [LLM Inference Process](#llm-inference-process)
+   * [Prefill Phase of Inference](#prefill-phase-of-inference)
+   * [Decoding Phase of Inference](#decoding-phase-of-inference)
+- [Decoding Strategies](#decoding-strategies)
+   * [Greedy Search](#greedy-search)
+   * [Beam Search](#beam-search)
+   * [Top-k Sampling](#top-k-sampling)
+   * [Nucleus sampling](#nucleus-sampling)
+   * [Temperature Sampling](#temperature-sampling)
+
+
 
 <br>
 
@@ -356,6 +381,7 @@ NF4_quant_4bit = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15
 
 6\. Finally, pack the quantized 4-bit tensor into **`torch.uint8`** dtype (*an 8-bit unsigned integer representation*).
 
+##### *Explaining How 4-Bit Values Are Compacted into 8-Bit Formats*
 <br>
 
 > Admittedly, this part intially threw me off, as I was expecting the 4-bit representation to be packed into a 4-bit data type which assumes exactly 16 unique values, not an 8-bit data type with 256 unique values. However, after going through the code, it turns out the author of bitsandbytes converts the 4-bit values into 8-bit by packing two 4 bit values into a single 8-bit value, this results ofcourse, in a different shape for the quantized tensor. This is because PyTorch does not support 4-bit data types and the smallest type it supports is 8-bits — as of the writing of this post
@@ -793,7 +819,7 @@ response = tokenizer.decode(outputs[0])
 
 <br>
 
-***Prefill Phase of Inference***
+#### Prefill Phase of Inference
 
 
 During the prefill phase, the entire prompt tokens are fed to the model at once and processed in parallel until the first output token is generated.
@@ -825,7 +851,7 @@ However, in practice we use reshaping instead of splitting to apply the scaled d
 <br>
 
 
-***Decoding Phase of Inference***
+#### Decoding Phase of Inference
 
 
 The decoding phase contains multiple steps where the model generates tokens one at a time. At each decoding step, the model takes the user prompt coupled with the tokens predicted in previous steps and feeds them into the model to generate the next token.
@@ -934,13 +960,13 @@ If you ever had to deal with language model APIs, you may have encountered these
 
 
 
-**Greedy Search**
+#### Greedy Search
 
 Greedy search is a simple, naive method that selects the most likely token at each decoding step to construct the final output sequence. However, because it considers only locally optimal tokens it results in low quality, incoherent text.
 
 <br>
 
-**Beam Search**
+#### Beam Search
 
 Beam search is considered a more effective decoding strategy than greedy search, because it’s a search based algorithm that expands the search space at each time step. Instead of simply choosing the single best option at each step like in greedy search, beam search consistently updates of the top K sequences at each step, where K is referred to as the beam width. At the end of the decoding process, we end up with a set of K complete candidate sequences, from which we select the one with the highest probability. As a result, the beam search algorithm is a computationally intensive requiring more model runs than other decoding strategies, because it explores multiple paths by expanding over all selected top k tokens at each decoding step.
 
@@ -966,7 +992,7 @@ However, this decoding strategy performs poorly on open text generation tasks ge
 
 <br>
 
-**Top-k Sampling**
+#### Top-k Sampling
 
 Top-k Sampling introduces randomenss by considering a smaller set of tokens from which we randomly sample the next token from. The chosen tokens are the ones with the highest logit scores, which are unormalized model predictions. This way after applying softmax, the probability distribution is reconstructed and redistributed over this smaller set of candidates, it then samples the next token at random from this new distribution. This approach balances exploring a focused region of highly probable tokens with random sampling. The size of the chosen region is defined by the `top_k` hyperparameter. Here is the exact algorithm:
 
@@ -998,7 +1024,7 @@ def top_k_sampling(logits, top_k):
 
 <br>
 
-**Nucleus sampling**
+#### Nucleus sampling
 
 Nucleus sampling (also referred to as top-p sampling) Instead of having to select a k fixed number of tokens, nucleus sampling dynamically selects the set of tokens to sample from at each decoding step, based on a pre-determined probability threshold $$top\_p$$ which ranges from 0 to 1.
 
@@ -1062,7 +1088,7 @@ def nucleus_sampling(logits, top_p):
 
 <br>
 
-**Temperature Sampling**
+#### Temperature Sampling
 
 Temperature Sampling is a calibration method that scales down the unormalized logits using a hyperparameter T which ranges between 0 and 2, before passing them to the softmax function.
 
