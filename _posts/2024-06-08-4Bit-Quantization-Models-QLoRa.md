@@ -34,12 +34,12 @@ By the end of this post, you should have a deep understanding of:
 - [LoRa Theory](#lora-theory)
 - [Technical Deep Dive into Implementing QLoRa](#technical-deep-dive-into-implementing-qlora)
    * [1\. Breakdown of 4\-Bit Quantization Using NF4 Data Type](#1-breakdown-of-4-bit-quantization-using-nf4-data-type)
-  	 * [Explaining both the reasonining and logic behind compacting 4-Bit values into 8-Bit formats](#explaining-both-the-reasoning-and-logic-behind-compacting-4-bit-values-into-8-bit-formats)
+  	 * [Explaining both the reasoning and logic behind compacting 4-Bit values into 8-Bit formats](#explaining-both-the-reasoning-and-logic-behind-compacting-4-bit-values-into-8-bit-formats)
    * [2\. Loading and Configuring the NF4 Quantized Model](#2-loading-and-configuring-the-nf4-quantized-model)
    * [3\. Casting Certain Layers to Full Precision](#3-casting-certain-layers-to-full-precision)
    * [4\. Injecting LoRa Trainable Adapters](#4-injecting-lora-trainable-adapters)
    * [5\. Finetuning Process with LoRa](#5-finetuning-process-with-lora)
-   * [6\. Strategies for Reducing GPU Memory Usage in LLM Fine\-tuning with STTrainer](#6-strategies-for-reducing-gpu-memory-usage-in-llm-fine-tuning-with-sttrainer)
+   * [6\. Strategies for Reducing GPU Memory Usage in LLM Finetuning with STTrainer](#6-strategies-for-reducing-gpu-memory-usage-in-llm-finetuning-with-sttrainer)
    * [7\. Merging LoRa adapters to base model](#7-merging-lora-adapters-to-base-model)
 - [LLM Inference Process](#llm-inference-process)
    * [Prefill Phase of Inference](#prefill-phase-of-inference)
@@ -154,7 +154,7 @@ However, if we use asymmetric quantization on Relu output, the full range of qua
 
 <br>
 
-> To conclude, applying symmetric quantization to skewed data might allocate a significant portion of the quantized rangeto values that are unlikely to occur in practice, which makes asymmetric quantization more suitable for this type of data.
+> To conclude, applying symmetric quantization to skewed data might allocate a significant portion of the quantized range to values that are unlikely to occur in practice, which makes asymmetric quantization more suitable for this type of data.
 
 <br>
 
@@ -191,9 +191,9 @@ Consequently, uniform (linear) quantization is still considered the standard in 
 
 Finetuning large models or simply running inference requires substantial GPU memory because it requires the model weights and intermediate computations to be loaded into the GPU’s memory.
 
-This memory bottleneck is fundamentally imposed by the von Neumann architecture in current computing systems, where the main system memory is separated from the compute processing units on GPU. Therefore, all data required for neural network computations must be transfered from main memory to GPU memory (VRAM). This data in question includes the model weights, the gradients, the activations and optimizer states, all need to fit into the GPU memory.
+This memory bottleneck is fundamentally imposed by the von Neumann architecture in current computing systems, where the main system memory is separated from the compute processing units on GPU. Therefore, all data required for neural network computations must be transferred from main memory to GPU memory (VRAM). This data in question includes the model weights, the gradients, the activations and optimizer states, all need to fit into the GPU memory.
 
-Furthermore, the bottleneck is due to memory hierarchy, where memory component in computing systems can be arranged hierarchically in terms of storage, speed and cost. With the main memory being relatively cheap yet offereing larger storage with slower access to data, while GPU memory being expensive with smaller storage but offereing faster access speeds.
+Furthermore, the bottleneck is due to memory hierarchy, where memory component in computing systems can be arranged hierarchically in terms of storage, speed and cost. With the main memory being relatively cheap yet offering larger storage with slower access to data, while GPU memory being expensive with smaller storage but offering faster access speeds.
 
 <br>
 
@@ -201,7 +201,7 @@ Furthermore, the bottleneck is due to memory hierarchy, where memory component i
 
 
 
-Memory requirement can be estimed using the following formula :
+Memory requirement can be estimated using the following formula :
 
 
  $$VRAM\_requirement = total\_number\_of\_parameters\ * \ number\_of\_bytes\_per\_parameter$$
@@ -339,12 +339,10 @@ Let's walk through the steps that a weight matrix $$W$$ goes through to be conve
 1\.  Flatten the weight matrix $$W$$ into a one-dimensional sequence.  
 
 
-
 2\.  Then split $$W$$ into equal sized blocks. 
 
 
-
-3\.  Normalize each block with its absolute maximum value to make sure the weights fit within the quantization range of [-1, 1] — *This is the scaling operation where the scaling factor S is the absolute maximum value, as a result the scaling factor of each block is stored for the dequantization process as a tensor with a length equal to the number of blocks.* 
+3\.  Normalize each block with its absolute maximum value to make sure the weights fit within the quantization range of [-1, 1] — This is the scaling operation where the scaling factor S is the absolute maximum value, as a result the scaling factor of each block is stored for the dequantization process as a tensor with a length equal to the number of blocks.
 
 <br>
 
@@ -389,7 +387,7 @@ NF4_quant_4bit = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15
 
 6\. Finally, pack the quantized 4-bit tensor into **`torch.uint8`** dtype (*an 8-bit unsigned integer representation*).
 
-##### Explaining both the reasonining and logic behind compacting 4-Bit values into 8-Bit formats:
+##### Explaining both the reasoning and logic behind compacting 4-Bit values into 8-Bit formats
 
 > Admittedly, this part intially threw me off, as I was expecting the 4-bit representation to be packed into a 4-bit data type which assumes exactly 16 unique values, not an 8-bit data type with 256 unique values. However, after going through the code, it turns out the author of bitsandbytes converts the 4-bit values into 8-bit by packing two 4 bit values into a single 8-bit value, this results ofcourse, in a different shape for the quantized tensor. This is because PyTorch does not support 4-bit data types and the smallest type it supports is 8-bits — as of the writing of this post
 >
@@ -560,7 +558,7 @@ Furthermore, you can set **`bnb_4bit_compute_dtype`** to **`float32`** (the defa
 
 <br>
 
-> **16-bit BrainFloat** is a floating point representation developed by Google Brain tailored for deep learning models. This representation has the same number of bits as **`float16`** but with a different allocation of bits, assigning 8 bits for the exponent as opposed to 5 bits in **`float16`**. The increased exponent width offers a larger dynamic range, meaning it can represent a larger range of values (dynamic range is the ratio of the largest to smallest positive value). As a result, **`bfloat16`** has a comparabale performance as **`float32`** with half the number of bits. This offers more flexibility to represent smaller and larger values in the network, reducing numerical underflows and overflows all while using less memory during training.
+> **16-bit BrainFloat** is a floating point representation developed by Google Brain tailored for deep learning models. This representation has the same number of bits as **`float16`** but with a different allocation of bits, assigning 8 bits for the exponent as opposed to 5 bits in **`float16`**. The increased exponent width offers a larger dynamic range, meaning it can represent a larger range of values (dynamic range is the ratio of the largest to smallest positive value). As a result, **`bfloat16`** has a comparable performance as **`float32`** with half the number of bits. This offers more flexibility to represent smaller and larger values in the network, reducing numerical underflows and overflows all while using less memory during training.
 
 <br>
 
@@ -694,7 +692,7 @@ peft_model = get_peft_model(base_NF4_model, lora_config)
 
 <br>
 
-#### 6\. Strategies for Reducing GPU Memory Usage in LLM Fine\-tuning with STTrainer
+#### 6\. Strategies for Reducing GPU Memory Usage in LLM Finetuning with STTrainer
 
 
 
@@ -705,7 +703,7 @@ We can easily enable the following techniques using the `TrainingArguments` cla
 
 
 
-*The configutation in the following code contains only the settings that pertain to the important training techniques explained in this section for demonstration purposes, it omits necessary configs related to training like batch\_size, learning\_rate, etc. Here is a comprehensive [code of SFTTrainer](https://gist.github.com/younesbelkada/f48af54c74ba6a39a7ae4fd777e72fe8) with complete configuration.*
+*The configuration in the following code contains only the settings that pertain to the important training techniques explained in this section for demonstration purposes, it omits necessary configs related to training like batch\_size, learning\_rate, etc. Here is a comprehensive [code of SFTTrainer](https://gist.github.com/younesbelkada/f48af54c74ba6a39a7ae4fd777e72fe8) with complete configuration.*
 
 
 ``` python
@@ -1104,7 +1102,7 @@ def nucleus_sampling(logits, top_p):
 Temperature Sampling is a calibration method that scales down the unormalized logits using a hyperparameter T which ranges between 0 and 2, before passing them to the softmax function.
 
 
-The generated predictions can sometimes be naive, in that, it could produce very peaked probability distribution that results in over-confident predictions for few tokens. To address this, we calibrate the distributation to adjust model confidence by introducing a degree of randomness using temperature. Then as usual with sampling methods, we sample at random from the resulting probability distribution:
+The generated predictions can sometimes be naive, in that, it could produce very peaked probability distribution that results in over-confident predictions for few tokens. To address this, we calibrate the distribution to adjust model confidence by introducing a degree of randomness using temperature. Then as usual with sampling methods, we sample at random from the resulting probability distribution:
 
 <br>
 
@@ -1121,7 +1119,7 @@ probs = F.softmax(scaled_logits)
 <br>
 
 
-> These sampling techniques can be combined together by modifying the probability distribution sequentially, starting with temperature sampling followed by the sampling methods. This ensures that the selected set of tokens have non-zero probabilities while zeroing out the probabilities of tokens that do not belong to this set. We then randomly sample the next token from the produced distribution using the **`torch.multinomial`** sampler, which is not to be mistaken with what **`numpy.random.choice`** does with uniform random sampling — used numpy as an example because the equivalent operation in Pytorch is not as straightforward — **`torch.multinomial`** samples from the input tensor with or without replacement (when using n>1), ensuring that the selection takes into consideration the probabilities assigned to each token, with tokens having higher probabilities being more likely to be chosen.
+> These sampling techniques can be combined together by modifying the probability distribution sequentially, starting with temperature sampling followed by the sampling methods. This ensures that the selected set of tokens have non-zero probabilities while zeroing out the probabilities of tokens that do not belong to this set. We then randomly sample the next token from the produced distribution using the **`torch.multinomial`** sampler, which is not to be mistaken with what **`numpy.random.choice`** does with uniform random sampling — I used numpy as an example because the equivalent operation in Pytorch is not as straightforward — **`torch.multinomial`** samples from the input tensor with or without replacement (when using n>1), ensuring that the selection takes into consideration the probabilities assigned to each token, with tokens having higher probabilities being more likely to be chosen.
 
 <br>
 
