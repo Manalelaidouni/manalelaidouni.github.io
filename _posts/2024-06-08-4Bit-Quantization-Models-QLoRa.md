@@ -17,6 +17,8 @@ This gap prompted me to explore the library thoroughly and write the most compre
 
 By the end of this post, you should have a deep understanding of:
 
+<br>
+
 1. How LLM quantization works and the theory behind LoRa.
 2. How 4-bit quantization works with the NF4 dtype in detail along with an implementation from scratch of NF4 quantization that returns the exact result as the bitsandbytes implementation.
 3. Other memory saving techniques that are useful when dealing with limited memory.
@@ -24,14 +26,15 @@ By the end of this post, you should have a deep understanding of:
 5. Large language model (LLM) inference process with KV caching.
 6. Decoding strategies with implementation from scratch.
 
+
 - [Quantization Overview](#quantization-overview)
    * [Choosing Between Symmetric and Asymmetric Quantization](#choosing-between-symmetric-and-asymmetric-quantization)
    * [Some Background on Non-Uniform Quantization](#some-background-on-non-uniform-quantization)
 - [GPU Memory Estimation](#gpu-memory-estimation)
-- [LoRa Overview](#lora-overview)
+- [LoRa Theory](#lora-theory)
 - [Technical Deep Dive into Implementing QLoRa](#technical-deep-dive-into-implementing-qlora)
    * [1\. Breakdown of 4\-Bit Quantization Using NF4 Data Type](#1-breakdown-of-4-bit-quantization-using-nf4-data-type)
-  	 * [Explaining How 4-Bit Values Are Compacted into 8-Bit Formats](#explaining-how-4-bit-values-are-compacted-into-8-bit-formats)
+  	 * [Explaining both the reasonining and logic behind compacting 4-Bit values into 8-Bit formats](#explaining-both-the-reasoning-and-logic-behind-compacting-4-bit-values-into-8-bit-formats)
    * [2\. Loading and Configuring the NF4 Quantized Model](#2-loading-and-configuring-the-nf4-quantized-model)
    * [3\. Casting Certain Layers to Full Precision](#3-casting-certain-layers-to-full-precision)
    * [4\. Injecting LoRa Trainable Adapters](#4-injecting-lora-trainable-adapters)
@@ -207,7 +210,7 @@ Memory requirement can be estimed using the following formula :
 
 <a name="lora"></a>
 
-### LoRa Overview
+### LoRa Theory
 
 As we mentioned above, finetuning language models is computationally expensive, almost prohibitive when dealing with LLMs that contain parameters in the order of tens of billions or more. As a result, many memory-efficient finetuning methods have been developed, one of which is LoRa (Low-Rank Adaptation of Large Language Models) which is introduced as a parameter-efficient finetuning approach that enables finetuning large models on resource-constrained devices, making it possible to adapt powerful language models to downstream tasks for everyone.
 
@@ -386,7 +389,7 @@ NF4_quant_4bit = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15
 
 6\. Finally, pack the quantized 4-bit tensor into **`torch.uint8`** dtype (*an 8-bit unsigned integer representation*).
 
-##### Explaining How 4-Bit Values Are Compacted into 8-Bit Formats:
+##### Explaining both the reasonining and logic behind compacting 4-Bit values into 8-Bit formats:
 
 > Admittedly, this part intially threw me off, as I was expecting the 4-bit representation to be packed into a 4-bit data type which assumes exactly 16 unique values, not an 8-bit data type with 256 unique values. However, after going through the code, it turns out the author of bitsandbytes converts the 4-bit values into 8-bit by packing two 4 bit values into a single 8-bit value, this results ofcourse, in a different shape for the quantized tensor. This is because PyTorch does not support 4-bit data types and the smallest type it supports is 8-bits — as of the writing of this post
 >
@@ -394,8 +397,12 @@ NF4_quant_4bit = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15
 
 <br>	
 
-*To make sure my understanding of the 4-bits quantization with the NF4 data type (described in the above steps) is accurate, I implemented it from scratch on a small dummy input (first code snippet) and compared it to the bitsandbytes implementation (second code). Thankfully, the produced values are exactly equal. Note that the smallest block size used in bitsandbytes is 64 elements and since my input $$W$$ has 20 elements, bitsandbytes treats the entire tensor as a single block, so I didn't split $$W$$ into smaller blocks.*
+*To make sure my understanding of the 4-bits quantization with the NF4 data type (described in the above steps) is accurate, I implemented it from scratch on a small dummy input (first code snippet) and compared it to the bitsandbytes implementation (second code). Thankfully, the produced values are exactly equal.* 
 
+
+*Note that the smallest block size used in bitsandbytes is 64 elements and since my input $$W$$ has 20 elements, bitsandbytes treats the entire tensor as a single block, so I didn't split $$W$$ into smaller blocks.*
+
+<br>
 
 ``` python
 import torch
@@ -524,7 +531,7 @@ In this section, I explain the configuration choices necessary for implementing 
 
 <br>
 
-> Up to this point, we have a model whose linear layers are quantized as NormalFloat 4-bit data type (NF4) and converted from **`nn.Linear`** to **`bnb.nn.Linear4Bit`**. Thanks to the integration of the two libraries (bitsandbytes and 🤗’s **`Transformers`**), it only takes one step to load the model and quantize it, by enabling **`load_in_4bit`** flag and setting **`bnb_4bit_quant_type`** to NF4 using **`BitsAndBytesConfig`** from **`Transformer`** as follows.
+> Up to this point, we have a model whose linear layers are quantized as NormalFloat 4-bit data type (NF4) and converted from **`nn.Linear`** to **`bnb.nn.Linear4Bit`**. Thanks to the integration of the two libraries (bitsandbytes and 🤗’s **`Transformers`**) it only takes one step to load the model and quantize it, by enabling **`load_in_4bit`** flag and setting **`bnb_4bit_quant_type`** to NF4 using **`BitsAndBytesConfig`** from **`Transformer`** as follows.
 
 <br>
 
@@ -600,7 +607,7 @@ print(base_NF4_model.is_gradient_checkpointing)
 
 After calling `prepare_model_for_kbit_training` :
 
-```
+``` python
 print(base_NF4_model.model.norm.weight.dtype, base_NF4_model.lm_head.weight.dtype, base_NF4_model.model.embed_tokens.weight.dtype)
 # Output : (torch.float32, torch.float32, torch.float32)
 
@@ -724,7 +731,7 @@ trainer.train()
 Gradient checkpointing is a technique used to reduce model memory footprint during backpropagation by storing less activations. Typically in vanilla neural network training, the activations in the forward pass are cached so they can be used in the backward pass to compute the gradients. However for a large model, caching all activations can cause memory overhead. Gradient checkpointing is used to address this issue.
 
 
-> The crux of gradient checkpointing is that instead of storing all activations, we store only a subset of them in the forward pass, mainly the high cost operations that are time consuming, while the remaining ones are re-computed on the fly during backpropagation. This reduces memory usage but it takes longer to complete a backward pass.*I believe the name “*gradient checkpointing*” is somewhat misleading, its alternative name, “*Activation checkpointing”* seems more appropriate.*
+> The crux of gradient checkpointing is that instead of storing all activations, we store only a subset of them in the forward pass, mainly the high cost operations that are time consuming, while the remaining ones are re-computed on the fly during backpropagation. This reduces memory usage but it takes longer to complete a backward pass. *I believe the name "gradient checkpointing" is somewhat misleading, its alternative name, "Activation checkpointing" seems more appropriate.*
 
 You can enable gradient checkpointing by setting `gradient_checkpointing` to True in `TrainingArguments`.
 
