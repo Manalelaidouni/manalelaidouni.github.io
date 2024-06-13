@@ -336,15 +336,15 @@ bitsandbytes provides 4-bit quantization using block-wise k-bit quantization, th
 
 Let's walk through the steps that a weight matrix $$W$$ goes through to be converted to the NF4 data type using block-wise quantization:
 
-1\. Flatten the weight matrix $$W$$ into a one-dimensional sequence.  
+1\.  Flatten the weight matrix $$W$$ into a one-dimensional sequence.  
 
-<br>
 
-2\. Then split $$W$$ into equal sized blocks. 
 
-<br>
+2\.  Then split $$W$$ into equal sized blocks. 
 
-3\. Normalize each block with its absolute maximum value to make sure the weights fit within the quantization range of [-1, 1] — *This normalization is the scaling operation where the scaling factor S is the absolute maximum value, as a result the scaling factor of each block is stored for the dequantization process as a tensor with a length equal to the number of blocks.* 
+
+
+3\.  Normalize each block with its absolute maximum value to make sure the weights fit within the quantization range of [-1, 1] — *This is the scaling operation where the scaling factor S is the absolute maximum value, as a result the scaling factor of each block is stored for the dequantization process as a tensor with a length equal to the number of blocks.* 
 
 <br>
 
@@ -373,7 +373,7 @@ NF4_quant_levels = [-1.0, -0.6961928009986877, -0.5250730514526367, -0.394917488
 
 <br>
 
-*The following steps 5 and 6 contain additional logic to store the final quantized values:*
+***The following steps 5 and 6 contain additional logic to store the final quantized values:***
 
 5\. Each quantization level is represented with a 4 bits binary value as referenced in this [part of the code](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/csrc/kernels.cu#L278). The binary representations are used for storage are in unsigned 4-bit integers format **`uint4`**, we will see at end of step 6 why we use the **`uint4`** representation. For instance, this [function](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/csrc/kernels.cu#L223) uses these binary values to map back to the quantization levels during the dequantization process.
 
