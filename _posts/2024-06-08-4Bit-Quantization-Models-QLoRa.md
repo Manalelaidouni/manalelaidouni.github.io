@@ -445,9 +445,8 @@ for i in range(0, len(quantized_W_4bits), 2):
 packed_W_8bits = torch.tensor(packed_W_8bits, dtype=torch.uint8)
 
 print(packed_W_8bits)
-""" Output:
-tensor([242, 149,  30, 112,  18,   2, 125, 208,  52, 225], dtype=torch.uint8)
-"""
+# Output: tensor([242, 149,  30, 112,  18,   2, 125, 208,  52, 225], dtype=torch.uint8)
+
 ```
 
 <br>
@@ -470,7 +469,7 @@ W = torch.tensor([[ 0.4767, -0.2921,  0.0787, -0.1018],
                   [-0.3453,  0.3834, -0.0107, -0.4692],
                   [-0.4072, -0.2996, -0.4942, -0.2640],
                   [ 0.0125,  0.2962,  0.3123, -0.4705],
-                  [-0.1982, -0.1545,  0.3358, -0.4086]]).to(cuda)
+                  [-0.1982, -0.1545,  0.3358, -0.4086]])
 
 print(W.weight.dtype) 
 # Output: torch.float32 
@@ -488,21 +487,8 @@ quantized_W.weight = bnb.nn.Params4bit(data=W.weight, requires_grad=False).to("c
 print(quantized_W.weight.dtype) 
 # Output: torch.uint8 
 
-print(next(quantized_W.parameters()))
-
-""" Output:
-Params4bit([[242],
-            [149],
-            [ 30],
-            [112],
-            [ 18],
-            [  2],
-            [125],
-            [208],
-            [ 52],
-            [225]], device='cuda:0', dtype=torch.uint8))
-
-"""
+print(next(quantized_W.parameters()).flatten())
+# Output: tensor([242, 149,  30, 112,  18,   2, 125, 208,  52, 225], dtype=torch.uint8)
 ```
 
 <br>
