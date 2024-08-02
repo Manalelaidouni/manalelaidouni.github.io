@@ -373,7 +373,7 @@ NF4_quant_levels = [-1.0, -0.6961928009986877, -0.5250730514526367, -0.394917488
 
 ***The following steps 5 and 6 contain additional logic to store the final quantized values:***
 
-5\. Each quantization level is represented with a 4 bits binary value as referenced in this [part of the code](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/csrc/kernels.cu#L278). The binary representations are used for storage are in unsigned 4-bit integers format **`uint4`**, we will see at end of step 6 why we use the **`uint4`** representation. For instance, this [function](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/csrc/kernels.cu#L223) uses these binary values to map back to the quantization levels during the dequantization process.
+5\. Each quantization level is represented with a 4 bits binary value as referenced in this [part of the code](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/csrc/kernels.cu#L278). These are the binary representation of  unsigned 4-bit integers format **`uint4`**, we will see at end of step 6 why we use the **`uint4`** representation. For instance, this [function](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/csrc/kernels.cu#L223) uses these binary values to map back to the quantization levels during the dequantization process.
 
 
 
@@ -398,7 +398,7 @@ NF4_quant_4bit = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15
 *To make sure my understanding of the 4-bits quantization with the NF4 data type (described in the above steps) is accurate, I implemented it from scratch on a small dummy input (first code snippet) and compared it to the bitsandbytes implementation (second code). Thankfully, the produced values are exactly equal.* 
 
 
-*Note that the smallest block size used in bitsandbytes is 64 elements and since my input $$W$$ has 20 elements, bitsandbytes treats the entire tensor as a single block, so I didn't split $$W$$ into smaller blocks.*
+*Note that the smallest block size used in bitsandbytes is 64 elements and since my input $$W$$ has 20 elements, bitsandbytes will treat this tensor as a single block and no splitting will be involved, as a result I didn't implement it in below.*
 
 <br>
 
@@ -406,6 +406,8 @@ NF4_quant_4bit = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15
 import torch
 
 NF4_quant_levels = torch.tensor([-1.0, -0.6961928009986877, -0.5250730514526367, -0.39491748809814453, -0.28444138169288635, -0.18477343022823334, -0.09105003625154495, 0.0, 0.07958029955625534, 0.16093020141124725, 0.24611230194568634, 0.33791524171829224, 0.44070982933044434, 0.5626170039176941, 0.7229568362236023, 1.0])
+
+#  binary representation of uint4 values (used 4-bit binaries instead of decimals for illustration purposes)
 nf4_quant_4bit = torch.tensor([0b0000, 0b0001, 0b0010, 0b0011, 0b0100, 0b0101, 0b0110, 0b0111, 0b1000, 0b1001, 0b1010, 0b1011, 0b1100, 0b1101, 0b1110, 0b1111])
 
 # generated tensor of [5, 4] shape
@@ -415,7 +417,6 @@ W = torch.tensor([[ 0.4767, -0.2921,  0.0787, -0.1018],
                   [ 0.0125,  0.2962,  0.3123, -0.4705],
                   [-0.1982, -0.1545,  0.3358, -0.4086]])
 
-# flatten the tensor
 flat_W = W.flatten()
 
 # normalize the tensor using absmax to fit within [-1, 1]
@@ -428,7 +429,8 @@ for i, val in enumerate(normalized_W):
     closest_level = torch.argmin(torch.abs(NF4_quant_levels - val)) # get the index of closest quantization level
     quantized_W_4bits[i] = nf4_quant_4bit[closest_level]
 
-print(quantized_W_4bits) # [15,  2,  9,  5,  1, 14,  7,  0,  1,  2,  0,  2,  7, 13, 13,  0,  3,  4, 14,  1]
+print(quantized_W_4bits)
+# Output: [15,  2,  9,  5,  1, 14,  7,  0,  1,  2,  0,  2,  7, 13, 13,  0,  3,  4, 14,  1]
 
 packed_W_8bits = []
 for i in range(0, len(quantized_W_4bits), 2):
@@ -440,27 +442,19 @@ for i in range(0, len(quantized_W_4bits), 2):
     packed_W_8bits.append(result)
 
 # set it as torch.uint8
-packed_W_8bits = torch.tensor(packed_W_8bits, dtype=torch.uint8).view(-1, 1)
+packed_W_8bits = torch.tensor(packed_W_8bits, dtype=torch.uint8)
 
 print(packed_W_8bits)
 """ Output:
-tensor([[242],
-        [149],
-        [ 30],
-        [112],
-        [ 18],
-        [  2],
-        [125],
-        [208],
-        [ 52],
-        [225]], dtype=torch.uint8)
+tensor([242, 149,  30, 112,  18,   2, 125, 208,  52, 225], dtype=torch.uint8)
 """
 ```
 
 <br>
 
 
-To show you how packing the first pair of **`quantized_W_4bits`** (15, 2) results in 242 in **`packed_W_8bits`**: packing is a series of bitwise operations, therefore 15 is represented as **`1111`** in binary, while 2 is is represented as **`0010`**. Following the packing operation mentioned above **`(1111 << 4) | 0010 = 11110000 | 0010 = 11110010`** ; **`11110010`** is equal 242 in decimal format.
+To demonstrate how packing the first pair of **`quantized_W_4bits`**, which are **(15, 2)** results in **242** in **`packed_W_8bits`**: 
+we represent 15 in binary as **`1111`** , while 2 is is represented as **`0010`**. Following the two operations bitwise operations as follow  **`(1111 << 4) | 0010 = 11110000 | 0010 = 11110010`** ; the result 8 bit number **`11110010`** is equal 242 in decimal format.
 
 <br>
 
@@ -542,7 +536,7 @@ nf4_config = BitsAndBytesConfig(
    bnb_4bit_compute_dtype=torch.bfloat16,
    bnb_4bit_use_double_quant=True)
 
-# *Using Open LLama 3b model*
+
 base_NF4_model = AutoModelForCausalLM.from_pretrained("openlm-research/open_llama_3b", quantization_config=nf4_config)
 print(base_NF4_model.is_loaded_in_4bit) 
 # Output: True
@@ -692,18 +686,13 @@ peft_model = get_peft_model(base_NF4_model, lora_config)
 
 <br>
 
-#### 6\. Strategies for Reducing GPU Memory Usage in LLM Finetuning with STTrainer
+#### 6\. Strategies for Reducing GPU Memory Usage in LLM Finetuning 
 
 
 
 Besides quantization and LoRa’s efficient finetuning, which are used as memory saving approaches, there are other methods that are currently prevelant in training LLMs. These methods reduce memory consumption without compromising performance and are related to storing activations, gradients and optimizer states during finetuning.
 
-
-We can easily enable the following techniques using the `TrainingArguments` class from `Transformers`, whose object is then passed to Supervised Fine-tuning Trainer `SFTTrainer` from `TRL` library.
-
-
-
-*The configuration in the following code contains only the settings that pertain to the important training techniques explained in this section for demonstration purposes, it omits necessary configs related to training like batch\_size, learning\_rate, etc. Here is a comprehensive [code of SFTTrainer](https://gist.github.com/younesbelkada/f48af54c74ba6a39a7ae4fd777e72fe8) with complete configuration.*
+*The configuration in the following code contains only the settings that pertain to the important training techniques explained in this section for demonstration purposes, it omits necessary configs related to training like batch\_size, learning\_rate, etc. Here is a code [example](https://gist.github.com/younesbelkada/f48af54c74ba6a39a7ae4fd777e72fe8) with complete configuration.*
 
 
 ``` python
@@ -712,7 +701,7 @@ training_args =  TrainingArguments(output_dir=output_dir,
     optim="paged_adamw_32bit",
     gradient_accumulation_steps = 4)
 															
-trainer = SFTTrainer(peft_model,
+trainer = SFTTrainer(model,
     args = training_args,
     peft_config = lora_config,
     train_dataset = train_data,
