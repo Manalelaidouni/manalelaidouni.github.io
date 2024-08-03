@@ -1,4 +1,4 @@
----
+x---
 layout: post
 title: 'Mastering QLoRa : A Deep Dive into 4-Bit Quantization and LoRa Parameter Efficient Fine-Tuning'
 date : 2024-06-08
@@ -150,7 +150,7 @@ plot_histogram(quantized_data, bit_width, quantized_data)
 We can clearly see in the histogram that half of the bins to the left of zero are not utilized at all, this leads to a more limited data representation, where instead of utilizing the entire 256 values assumed in an 8-bit representation, it only uses half of that, which is 128 values. This is equivalent to using a 7-bit format ($$2^7=128$$) resulting in one bit that is completely wasted out of the 8 bits.
 
 
-However, if we use asymmetric quantization on Relu output, the full range of quantized values will be fully utilized, because the clipping range becomes $$[r\_{min}=min(X),r\_{max}=max(X)]$$ instead of $$[ -α= - max(∣X∣) , α=max(∣X∣)]$$ which includes the values that actually show up in the input data.
+However, if we use asymmetric quantization on Relu output, the full range of quantized values will be fully utilized, because the clipping range becomes $[r_{min}=min(X),r_{max}=max(X)]$ instead of $[ -α= - max(∣X∣) , α=max(∣X∣)]$ which includes the values that actually show up in the input data.
 
 <br>
 
@@ -307,7 +307,7 @@ What’s unique about LoRa is that it doesn’t have any inference latency cost.
 
 <br>
 
-Although LoRa adapters can be injected into any linear layer in the LLM architecture, in the paper, it exclusively injects the adapters into each of the projection matrices in the self-attention module, which are $$W\_{query}$$, $$W\_{key}$$, $$W\_{value}$$, and $$W\_{output}$$.
+Although LoRa adapters can be injected into any linear layer in the LLM architecture, in the paper, it exclusively injects the adapters into each of the projection matrices in the self-attention module, which are $$W_{query}$$, $$W_{key}$$, $$W_{value}$$, and $$W_{output}$$.
 
 *You’ll gain a deeper understanding of LoRa in this [section](#4-injecting-lora-trainable-adapters) (part 4, 5, 7).*
 
@@ -346,7 +346,7 @@ Let's walk through the steps that a weight matrix $$W$$ goes through to be conve
 
 <br>
 
-4\. The actual quantization mapping uses a set of predefined unique 16 float values [$$q\_1, . . . , q\_{16}$$] suggested by the paper to map each value normalized value $$x\_i$$ in the block to the nearest quantized value $$q\_i$$ in the set. These `NF4_quant_levels` are further referenced in both the [paper](https://arxiv.org/pdf/2305.14314) (in Appendix E) and [the](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/bitsandbytes/functional.py#L1087) [code](https://github.com/TimDettmers/bitsandbytes/blob/ffd7d0db6a660c97b60a2c9605309ee4b5cd40e3/csrc/kernels.cu#L3319).
+4\. The actual quantization mapping uses a set of predefined unique 16 float values [$$q_1, . . . , q_{16}$$] suggested by the paper to map each value normalized value $$x_i$$ in the block to the nearest quantized value $$q_i$$ in the set. These `NF4_quant_levels` are further referenced in both the [paper](https://arxiv.org/pdf/2305.14314) (in Appendix E) and [the](https://github.com/TimDettmers/bitsandbytes/blob/1f2ca43ae5f3b453ff5fed73a17c661dc4fbbcb3/bitsandbytes/functional.py#L1087) [code](https://github.com/TimDettmers/bitsandbytes/blob/ffd7d0db6a660c97b60a2c9605309ee4b5cd40e3/csrc/kernels.cu#L3319).
 
 <span style="line-height:1;">  
 
@@ -359,11 +359,11 @@ NF4_quant_levels = [-1.0, -0.6961928009986877, -0.5250730514526367, -0.394917488
 
 <br>
 
-**k-bit quantile quantization** estimates $$2^b$$ equally spaced quantile values $$q\_i$$ where $$b$$ is the desired bit-width for quantization. These estimated quantiles represent the quantization levels based on the quantiles of the normal distribution. To achieve this, the `bitsandbites` library uses the quantile function — also referred to as the inverse cumulative distribution function (ICDF) — implemented using `scipy.stats.norm.ppf` to generate these values. These quantiles are then normalized by the maximum value to achieve a range of [-1, 1]. Furthermore, Qlora uses asymmetric quantization to quantize $$0$$ in the input tensor to a constant non-zero value Z. This results in exactly $$2^{b-1} + 1$$ positive values and $$2^{b-1}$$ negative values in the representation (this makes it 9 positive values and 8 negative values in `NF4_quant_levels`).
+**k-bit quantile quantization** estimates $$2^b$$ equally spaced quantile values $$q_i$$ where $$b$$ is the desired bit-width for quantization. These estimated quantiles represent the quantization levels based on the quantiles of the normal distribution. To achieve this, the `bitsandbites` library uses the quantile function — also referred to as the inverse cumulative distribution function (ICDF) — implemented using `scipy.stats.norm.ppf` to generate these values. These quantiles are then normalized by the maximum value to achieve a range of [-1, 1]. Furthermore, Qlora uses asymmetric quantization to quantize $$0$$ in the input tensor to a constant non-zero value Z. This results in exactly $$2^{b-1} + 1$$ positive values and $$2^{b-1}$$ negative values in the representation (this makes it 9 positive values and 8 negative values in `NF4_quant_levels`).
 
 <br>
 
-**Now that we know from where these value come from**, the `bitsandbites` library uses midpoints between NF4 values as bins and compares each input value $$x\_i$$ to determine which bin the input value $$x\_i$$ falls into. It then assigns $$x\_i$$ to the closest $$q\_i$$ that falls within the bin.
+**Now that we know from where these value come from**, the `bitsandbites` library uses midpoints between NF4 values as bins and compares each input value $$x_i$$ to determine which bin the input value $$x_i$$ falls into. It then assigns $$x_i$$ to the closest $$q_i$$ that falls within the bin.
 
 <br>
 
@@ -1010,9 +1010,9 @@ def top_k_sampling(logits, top_k):
 
 #### Nucleus sampling
 
-Nucleus sampling (also referred to as top-p sampling) Instead of having to select a k fixed number of tokens, nucleus sampling dynamically selects the set of tokens to sample from at each decoding step, based on a pre-determined probability threshold $$top\_p$$ which ranges from 0 to 1.
+Nucleus sampling (also referred to as top-p sampling) Instead of having to select a k fixed number of tokens, nucleus sampling dynamically selects the set of tokens to sample from at each decoding step, based on a pre-determined probability threshold $$top_p$$ which ranges from 0 to 1.
 
-> Nucleus sampling starts by determining the smallest set of tokens whose cumulative probability is at least $$top\_p$$ such that $$\sum\_{i=1}^{k}p\_i ≥ top\_p$$. This set of chosen tokens is analogous to a "nucleus” containing the most probable tokens. Once this set S={$$𝑥\_1$$,$$𝑥\_2$$ ,…, $$𝑥\_𝑘$$} is determined, it re-applies the softmax function to redistribute the probability over S, and a token is sampled at random from this new distribution (similar to what we did with top-k sampling).
+> Nucleus sampling starts by determining the smallest set of tokens whose cumulative probability is at least $$top_p$$ such that $$\sum_{i=1}^{k}p_i ≥ top_p$$. This set of chosen tokens is analogous to a "nucleus” containing the most probable tokens. Once this set S={$$𝑥_1$$,$$𝑥_2$$ ,…, $$𝑥_𝑘$$} is determined, it re-applies the softmax function to redistribute the probability over S, and a token is sampled at random from this new distribution (similar to what we did with top-k sampling).
 
 
 Here is the exact algorithm for further understanding:
@@ -1021,7 +1021,7 @@ Here is the exact algorithm for further understanding:
    
 2. Sort the tokens based on their probabilities in descending order.
    
-3. Include tokens in the final set, starting from the top token with the highest probability, then add the tokens one by one until the cumulative probability of the tokens in this set is at least $$top\_p$$, that is, we should stop at the token $$x\_k$$ with a cumulative probability that first exceeds the threshold $$top\_p$$ . This means we include tokens $$𝑥\_1$$,$$𝑥\_2$$ ,…, $$𝑥\_𝑘$$ in the nucleus S.
+3. Include tokens in the final set, starting from the top token with the highest probability, then add the tokens one by one until the cumulative probability of the tokens in this set is at least $$top_p$$, that is, we should stop at the token $$x_k$$ with a cumulative probability that first exceeds the threshold $$top_p$$ . This means we include tokens $$𝑥_1$$,$$𝑥_2$$ ,…, $$𝑥_𝑘$$ in the nucleus S.
    
 4. Set the logits of the tokens not in the nucleus set *S* to −inf. This effectively removes these tokens from consideration in the next sampling step.
    
