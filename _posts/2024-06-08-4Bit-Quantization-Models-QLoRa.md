@@ -768,19 +768,19 @@ For instance, $$W_Q$$ is updated with the following formula $$W_Q$$ = $$W_Q$$ + 
 
 Here are the exact merging steps :
 
-1. Compute $$ΔW$$ for $$W_Q$$ using its corresponding finetuned LoRa weights `A` and `B` as follows:
+1.\ Compute $$ΔW$$ for $$W_Q$$ using its corresponding finetuned LoRa weights `A` and `B` as follows:
     $$ΔW = A  *  B  * scale\_factor$$
     where $$scale\_factor=\dfrac{α}{r}$$ as mentioned in the LoRa overview [section](#lora).
 
 
-2. Dequantize the original weight matrix $$W_Q$$ from **`NF4`** to **`bfloat16`** dtype.
+2.\ Dequantize the original weight matrix $$W_Q$$ from **`NF4`** to **`bfloat16`** dtype.
 
 
-3. Add the LoRA adapters to the dequantized weight :
+3.\ Add the LoRA adapters to the dequantized weight :
 $$dequantized\_W_Q$$ = $$dequantized\_W_Q$$+ ΔW
 
 
-4. Quantize the merged weight back to the original 4-bit quantization with NF4 dtype.
+4.\ Quantize the merged weight back to the original 4-bit quantization with NF4 dtype.
 
 This process ensures that each of the LoRa adapters are integrated into the quantized base model weights efficiently.
 
