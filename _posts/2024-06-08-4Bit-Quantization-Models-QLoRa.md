@@ -150,7 +150,7 @@ plot_histogram(quantized_data, bit_width, quantized_data)
 We can clearly see in the histogram that half of the bins to the left of zero are not utilized at all, this leads to a more limited data representation, where instead of utilizing the entire 256 values assumed in an 8-bit representation, it only uses half of that, which is 128 values. This is equivalent to using a 7-bit format ($$2^7=128$$) resulting in one bit that is completely wasted out of the 8 bits.
 
 
-However, if we use asymmetric quantization on Relu output, the full range of quantized values will be fully utilized, because the clipping range becomes $[r_{min}=min(X),r_{max}=max(X)]$ instead of $[ -α= - max(∣X∣) , α=max(∣X∣)]$ which includes the values that actually show up in the input data.
+However, if we use asymmetric quantization on Relu output, the full range of quantized values will be fully utilized, because the clipping range becomes $$[r_{min}=min(X),r_{max}=max(X)]$$ instead of $$[ -α= - max(∣X∣) , α=max(∣X∣)]$$ which includes the values that actually show up in the input data.
 
 <br>
 
@@ -744,8 +744,7 @@ You can enable gradient accumulation by setting the `gradient_accumulation_steps
 
 ### 7\. Merging LoRa adapters to base model
 
-
-Once the finetuning process is complete, we merge the stored fine-tuned LoRA adapters — saved in safetensors format and taking up very few MB of space — back into the original layers specified in `target_modules` of the quantized base model `base_NF4_model` that we used at the start, to produce the final model for inference. This is achieved using the following code:
+It’s important to note that during checkpointing, PEFT doesn’t save the entire PeftModel, it only saves the adapter weights which takes up few MB of space. Once the finetuning process is complete, we merge the saved, now trained adapter weights back into their corresponding base layers specified in `target_modules` of the quantized base model `base_NF4_model` that we used at the start (you can also merge into the unquantized version of the model). We do this by instantiating a new PEFT model using the base model and the adapter weights, as follows:
 
 <br>
 
@@ -757,7 +756,7 @@ merged_final_model = lora_model.merge_and_unload()
 
 ***What does it do?***
 
-For each module specified in `target_modules`, the finetuned LoRa adapters are added to their corresponding original quantized weights.
+For each module specified in `target_modules`, the adapter weights A and B are added to their corresponding original quantized weights.
 
 For instance, $$W_Q$$ is updated with the following formula $$W_Q$$ = $$W_Q$$ + $$ΔW$$.
 
@@ -773,10 +772,13 @@ Here are the exact merging steps :
     $$ΔW = A  *  B  * scale\_factor$$
     where $$scale\_factor=\dfrac{α}{r}$$ as mentioned in the LoRa overview [section](#lora).
 
+
 2. Dequantize the original weight matrix $$W_Q$$ from **`NF4`** to **`bfloat16`** dtype.
+
 
 3. Add the LoRA adapters to the dequantized weight :
 $$dequantized\_W_Q$$ = $$dequantized\_W_Q$$+ ΔW
+
 
 4. Quantize the merged weight back to the original 4-bit quantization with NF4 dtype.
 
