@@ -654,7 +654,7 @@ peft_model = get_peft_model(base_NF4_model, lora_config)
 
 
 
-* As you can see above, the trainable weight matrices $$A$$ and $$B$$ (which constitute $$ΔW$$) are simply injected into the existing model layer $$W\_Q$$, as opposed to another existing [solution](https://arxiv.org/pdf/1902.00751) that also uses adapters but adds them as separate layers sequentially to the Transformer architecture, introducing additional inference latency. The layer weight itself $$W\_Q$$ is kept frozen.
+* As you can see above, the trainable weight matrices $$A$$ and $$B$$ (which constitute $$ΔW$$) are simply injected into the existing model layer $$W_Q$$, as opposed to another existing [solution](https://arxiv.org/pdf/1902.00751) that also uses adapters but adds them as separate layers sequentially to the Transformer architecture, introducing additional inference latency. The layer weight itself $$W_Q$$ is kept frozen.
 
 <a name="rank"></a>
 * LoRa dropout introduced in the QloRa paper and is applied to the input $$X$$ before multiplying by the matrices $$A$$ and $$B$$. You can set the value of the `lora_dropout` hyperparameter in `LoRa_config`.
@@ -759,24 +759,24 @@ merged_final_model = lora_model.merge_and_unload()
 
 For each module specified in `target_modules`, the finetuned LoRa adapters are added to their corresponding original quantized weights.
 
-For instance, $$W\_Q$$ is updated with the following formula $$W\_Q$$ = $$W\_Q$$ + $$ΔW$$.
+For instance, $$W_Q$$ is updated with the following formula $$W_Q$$ = $$W_Q$$ + $$ΔW$$.
 
 <br>
 
-> Note that we dequantize the original weight matrix $$W\_Q$$ from `NF4` to `bfloat16` — the computation dtype we specified in `BitsAndBytesConfig` — before merging. Dequantization is necessary here to perform the addition operation in higher precision format and maintain as much accuracy as possible.
+> Note that we dequantize the original weight matrix $$W_Q$$ from `NF4` to `bfloat16` — the computation dtype we specified in `BitsAndBytesConfig` — before merging. Dequantization is necessary here to perform the addition operation in higher precision format and maintain as much accuracy as possible.
 
 <br>
 
 Here are the exact merging steps :
 
-1. Compute $$ΔW$$ for $$W\_Q$$ using its corresponding finetuned LoRa weights `A` and `B` as follows:
+1. Compute $$ΔW$$ for $$W_Q$$ using its corresponding finetuned LoRa weights `A` and `B` as follows:
     $$ΔW = A  *  B  * scale\_factor$$
     where $$scale\_factor=\dfrac{α}{r}$$ as mentioned in the LoRa overview [section](#lora).
 
-2. Dequantize the original weight matrix $$W\_Q$$ from **`NF4`** to **`bfloat16`** dtype.
+2. Dequantize the original weight matrix $$W_Q$$ from **`NF4`** to **`bfloat16`** dtype.
 
 3. Add the LoRA adapters to the dequantized weight :
-$$dequantized\_W\_Q$$ = $$dequantized\_W\_Q$$+ ΔW
+$$dequantized\_W_Q$$ = $$dequantized\_W_Q$$+ ΔW
 
 4. Quantize the merged weight back to the original 4-bit quantization with NF4 dtype.
 
